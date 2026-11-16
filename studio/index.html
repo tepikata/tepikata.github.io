@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tepi Kata Studio</title>
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tepi Kata">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F1EEEA">
+<link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1P8oFkD4rLnPGrz-47TkfW-vgugiQtXGm">
+<link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1kgn4jz3Ynrd_Pf6YEtKSwm5eUGcizJ2K">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#F1EEEA;color:#1D1A1B;font:15px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  iframe{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);width:100%;height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border:0;opacity:0;transition:opacity .5s}
+  iframe.ok{opacity:1}
+  .layar{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;transition:opacity .5s}
+  .layar.pergi{opacity:0;pointer-events:none}
+  .ikon{width:76px;height:76px;border-radius:18px;box-shadow:0 14px 34px rgba(75,42,58,.28)}
+  h1{font:400 34px/1.1 "Bodoni Moda",Georgia,serif;color:#4B2A3A;margin:20px 0 6px}
+  p{margin:0;color:#77706B;font-size:14px;max-width:34ch}
+  .garis{width:110px;height:2px;margin:22px auto 0;background:#E2DCD5;overflow:hidden;border-radius:2px}
+  .garis i{display:block;width:40%;height:100%;background:#b08a57;animation:jalan 1.2s ease-in-out infinite}
+  @keyframes jalan{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+  form{margin-top:20px;display:grid;gap:10px;width:min(340px,86vw)}
+  input{font:inherit;border:1px solid #E2DCD5;background:#fff;border-radius:12px;padding:12px 14px;outline:none}
+  input:focus{border-color:#b08a57;box-shadow:0 0 0 3px rgba(176,138,87,.18)}
+  button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:13px;background:#4B2A3A;color:#fff}
+  .pasang{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:12px;align-items:center;background:rgba(29,26,27,.9);color:#fff;border-radius:16px;padding:12px 14px;font-size:13.5px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .pasang b{font-weight:600}
+  .pasang button{background:rgba(255,255,255,.14);padding:8px 12px;font-size:13px;margin-left:auto;flex:0 0 auto}
+  .hidden{display:none!important}
+  @media (prefers-reduced-motion:reduce){.garis i{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<div class="layar" id="layar">
+  <div>
+    <img class="ikon" src="https://lh3.googleusercontent.com/d/1P8oFkD4rLnPGrz-47TkfW-vgugiQtXGm" alt="">
+    <h1>Studio</h1>
+    <p id="ket">Membuka daftar klien…</p>
+    <div class="garis" id="garis"><i></i></div>
+    <form id="form" class="hidden">
+      <input id="isi" type="url" placeholder="Tempel link Studio dari email" autocomplete="off" required>
+      <button type="submit">Buka Studio</button>
+    </form>
+  </div>
+</div>
+<div class="pasang hidden" id="pasang"><span>Pasang sebagai aplikasi: tekan <b>Bagikan</b>, lalu <b>Tambah ke Layar Utama</b>.</span><button type="button" id="tutup">Tutup</button></div>
+<script>
+  // Aplikasi Studio Tepi Kata. Kunci admin disimpan di bagian # link (tidak pernah terkirim ke server GitHub).
+  var APP = 'https://script.google.com/macros/s/AKfycbw-JPq01HTHxvZ8WKSyY6nR40I8wEwPrNfW8CS8fhjV1-ELpqUAQYsTbr8T_tA6gzg/exec';
+  function bersih(v) { v = String(v || ''); var m = v.match(/[?&#]admin=([A-Za-z0-9]+)/); if (m) v = m[1]; return v.replace(/^#/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 64); }
+  function simpan(k) { try { localStorage.setItem('studioKunci', k); } catch (e) { } }
+  function ambil() { try { return localStorage.getItem('studioKunci') || ''; } catch (e) { return ''; } }
+  function buka(k) {
+    document.getElementById('form').classList.add('hidden');
+    document.getElementById('garis').classList.remove('hidden');
+    document.getElementById('ket').textContent = 'Membuka daftar klien…';
+    var f = document.createElement('iframe');
+    f.src = APP + '?admin=' + encodeURIComponent(k);
+    f.title = 'Studio';
+    f.allow = 'clipboard-write';
+    f.onload = function () { f.className = 'ok'; document.getElementById('layar').className = 'layar pergi'; };
+    document.body.appendChild(f);
+  }
+  var kunci = bersih(location.hash) || ambil();
+  if (kunci) { simpan(kunci); if (!location.hash) history.replaceState(null, '', '#' + kunci); buka(kunci); }
+  else {
+    document.getElementById('ket').textContent = 'Tempel link Studio dari email Anda untuk masuk. Cukup sekali di perangkat ini.';
+    document.getElementById('garis').classList.add('hidden');
+    document.getElementById('form').classList.remove('hidden');
+  }
+  document.getElementById('form').onsubmit = function (e) {
+    e.preventDefault(); var k = bersih(document.getElementById('isi').value);
+    if (k.length < 16) { document.getElementById('ket').textContent = 'Link tidak dikenali. Salin link Studio lengkap dari email.'; return; }
+    simpan(k); if (!location.hash) history.replaceState(null, '', '#' + k); buka(k);
+  };
+  var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var terpasang = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  try { if (ios && !terpasang && !localStorage.getItem('studioPasangTutup')) document.getElementById('pasang').classList.remove('hidden'); } catch (e) { }
+  document.getElementById('tutup').onclick = function () { document.getElementById('pasang').classList.add('hidden'); try { localStorage.setItem('studioPasangTutup', '1'); } catch (e) { } };
+</script>
+</body>
+</html>
