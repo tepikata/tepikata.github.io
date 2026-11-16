@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tepi Kata — Galeri Foto</title>
+<meta name="description" content="Galeri foto pribadi dari Tepi Kata. Pilih foto untuk edit dan album, lalu simpan kenangan Anda.">
+<meta property="og:title" content="Galeri Foto — Tepi Kata">
+<meta property="og:description" content="Galeri foto pribadi Anda dari Tepi Kata. Pilih foto favorit untuk edit dan album.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#F1EEEA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%234B2A3A%22/%3E%3Ctext x=%2232%22 y=%2245%22 font-family=%22Georgia,serif%22 font-size=%2236%22 fill=%22%23F1EEEA%22 text-anchor=%22middle%22%3ET%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#F1EEEA;color:#1D1A1B;font:15px/1.55 "Plus Jakarta Sans",system-ui,sans-serif}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .6s}
+  iframe.ok{opacity:1}
+  .tirai{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px;transition:opacity .6s}
+  .tirai.pergi{opacity:0;pointer-events:none}
+  .merek{font:500 13px/1 "Plus Jakarta Sans",sans-serif;letter-spacing:.32em;color:#1D1A1B;opacity:.85}
+  .tirai h1{font:400 clamp(30px,6vw,52px)/1.05 "Bodoni Moda",Georgia,serif;color:#4B2A3A;margin:22px 0 8px;letter-spacing:-.01em}
+  .tirai p{margin:0;color:#77706B;font-size:14px}
+  .garis{width:120px;height:2px;margin:22px auto 0;background:#E2DCD5;overflow:hidden;border-radius:2px}
+  .garis i{display:block;width:40%;height:100%;background:#b08a57;animation:jalan 1.2s ease-in-out infinite}
+  @keyframes jalan{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+  @media (prefers-reduced-motion:reduce){.garis i{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<div class="tirai" id="tirai">
+  <div>
+    <div class="merek">TEPI KATA</div>
+    <h1 id="judul">Membuka galeri…</h1>
+    <p id="ket">Sebentar ya, foto-foto Anda sedang disiapkan.</p>
+    <div class="garis" id="garis"><i></i></div>
+  </div>
+</div>
+<script>
+  // Link: https://tepikata.github.io/nama-klien-xxxx  →  aplikasi galeri Tepi Kata
+  var APP = 'https://script.google.com/macros/s/AKfycbw-JPq01HTHxvZ8WKSyY6nR40I8wEwPrNfW8CS8fhjV1-ELpqUAQYsTbr8T_tA6gzg/exec';
+  var slug = location.pathname.replace(/^\/+|\/+$/g, '').split('/').pop() || new URLSearchParams(location.search).get('k') || '';
+  if (/\.html?$/i.test(slug)) slug = '';
+  slug = slug.replace(/[^A-Za-z0-9_-]/g, '');
+  if (!slug) {
+    document.getElementById('judul').textContent = 'Tepi Kata';
+    document.getElementById('ket').textContent = 'Galeri foto klien. Buka link pribadi yang dikirim fotografer Anda.';
+    document.getElementById('garis').style.display = 'none';
+  } else {
+    var nama = slug.replace(/-[a-z0-9]{4}$/i, '').split('-').map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+    if (nama) { document.getElementById('judul').textContent = nama; document.title = nama + ' — Galeri Foto Tepi Kata'; }
+    var f = document.createElement('iframe');
+    f.src = APP + '?k=' + encodeURIComponent(slug);
+    f.title = 'Galeri foto';
+    f.allow = 'clipboard-write; fullscreen';
+    f.onload = function () { f.className = 'ok'; document.getElementById('tirai').className = 'tirai pergi'; };
+    document.body.appendChild(f);
+  }
+</script>
+</body>
+</html>
