@@ -8,7 +8,7 @@
   var KOSONG = { '': 1, '-': 1, '?': 1, '—': 1 };
   var MULAI = [2026, 11];                       // bulan pertama yang ditampilkan
   var GITHUB = 'https://github.com/tepikata/tasklist/issues';
-  var S = { data: null, bulan: null, jenis: 'jadwal', diambil: null };
+  var S = { data: null, bulan: null, jenis: 'jadwal', diambil: null, edit: false, nama: [], idx: {} };
   var HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   var $ = function (id) { return document.getElementById(id); };
 
@@ -81,9 +81,9 @@
       if (!e.ed) return;
       var lewat = tgl(b.y, b.m, e.day) < today;
       if (jenis === 'foto') {
-        list.push({ day: e.day, pr: e.pr, ed: kosong(e.edF) ? '' : judul(e.edF), ok: !kosong(e.okF), okTgl: kosong(e.okF) ? '' : e.okF, dl: dm(e.dlF, b.y), lewat: lewat, vg: '' });
+        list.push({ row: e.row, j: 'foto', day: e.day, pr: e.pr, ed: kosong(e.edF) ? '' : judul(e.edF), ok: !kosong(e.okF), okTgl: kosong(e.okF) ? '' : e.okF, dl: dm(e.dlF, b.y), lewat: lewat, vg: '' });
       } else if (!kosong(e.vg) || !kosong(e.edV)) {
-        list.push({ day: e.day, pr: e.pr, ed: kosong(e.edV) ? '' : judul(e.edV), ok: !kosong(e.okV), okTgl: kosong(e.okV) ? '' : e.okV, dl: null, lewat: lewat, vg: kosong(e.vg) ? '' : judul(e.vg) });
+        list.push({ row: e.row, j: 'video', day: e.day, pr: e.pr, ed: kosong(e.edV) ? '' : judul(e.edV), ok: !kosong(e.okV), okTgl: kosong(e.okV) ? '' : e.okV, dl: null, lewat: lewat, vg: kosong(e.vg) ? '' : judul(e.vg) });
       }
     });
     return list;
@@ -95,7 +95,8 @@
     if (t.ok) meta = '<span class="tl-ok">Selesai' + (t.okTgl ? ' ' + esc(t.okTgl) : '') + '</span>';
     else if (t.dl) meta = '<span class="' + (t.dl < today ? 'tl-late' : 'tl-dl') + '">' + (t.dl < today ? 'Lewat deadline ' : 'Deadline ') + t.dl.getUTCDate() + '/' + (t.dl.getUTCMonth() + 1) + '</span>';
     else if (!t.ed && t.vg) meta = '<span class="tl-dl">VG: ' + esc(t.vg) + '</span>';
-    return '<li class="' + (t.ok ? 'done' : '') + '"><span class="tl-box" aria-hidden="true">' + (t.ok ? '✓' : '') + '</span>' +
+    var at = S.edit && t.row ? ' data-row="' + t.row + '" data-j="' + t.j + '" tabindex="0" role="button"' : '';
+    return '<li class="' + (t.ok ? 'done' : '') + (at ? ' bisa' : '') + '"' + at + '><span class="tl-box"' + (at ? ' title="Tandai selesai / belum"' : ' aria-hidden="true"') + '>' + (t.ok ? '✓' : '') + '</span>' +
       '<span class="tl-tgl">' + t.day + '</span><span class="tl-main"><span class="tl-pr">' + esc(judul(t.pr)) + '</span>' + meta + '</span></li>';
   }
 
@@ -113,12 +114,13 @@
     var lalu = ev.filter(function (e) { return tgl(b.y, b.m, e.day) < today; });
     function item(e) {
       var d = tgl(b.y, b.m, e.day), t = tim(e), hariIni = +d === +today;
-      return '<li class="tl-ev' + (hariIni ? ' today' : '') + '"><span class="tl-date"><b>' + e.day + '</b><small>' + HARI[d.getUTCDay()] + '</small></span><span class="tl-main">' +
+      var at = S.edit && e.row ? ' data-row="' + e.row + '" tabindex="0" role="button"' : '';
+      return '<li class="tl-ev' + (hariIni ? ' today' : '') + (at ? ' bisa' : '') + '"' + at + '><span class="tl-date"><b>' + e.day + '</b><small>' + HARI[d.getUTCDay()] + '</small></span><span class="tl-main">' +
         '<span class="tl-pr">' + esc(judul(e.pr)) + (hariIni ? ' <em class="tl-now">Hari ini</em>' : '') + '</span>' +
         (e.jam && !kosong(e.jam) ? '<span class="tl-dl">' + esc(e.jam) + '</span>' : '') +
         (t ? '<span class="tl-team">' + esc(t) + '</span>' : '<span class="tl-late">Tim belum diisi</span>') + '</span></li>';
     }
-    var h = '';
+    var h = S.edit ? '<p class="tl-aksi"><button type="button" class="tl-btn" id="tlTambah">＋ Tambah event</button></p>' : '';
     if (nanti.length) h += '<section class="tl-grp"><h3>Akan datang<span>' + nanti.length + ' event</span></h3><ul>' + nanti.map(item).join('') + '</ul></section>';
     if (lalu.length) h += '<details class="tl-grp"' + (nanti.length ? '' : ' open') + '><summary>Sudah lewat<span>' + lalu.length + '</span></summary><ul>' + lalu.map(item).join('') + '</ul></details>';
     return h;
@@ -127,6 +129,7 @@
   function render() {
     var box = $('tlIsi');
     if (!S.data) return;
+    if ($('tlNama')) $('tlNama').innerHTML = S.nama.map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
     var today = hariIniWITA(), ymNow = today.getUTCFullYear() * 100 + today.getUTCMonth() + 1;
     var isJadwal = S.jenis === 'jadwal';
     var keys = Object.keys(S.data).filter(function (k) {
@@ -166,10 +169,50 @@
     box.innerHTML = h + kaki();
   }
   function kaki() {
-    return '<p class="tl-foot">Data dari spreadsheet Upcoming Event' + (S.diambil ? ' · dimuat ' + S.diambil : '') + ' · <a href="' + GITHUB + '" target="_blank" rel="noopener">Tasklist di GitHub</a></p>';
+    return '<p class="tl-foot">' + (S.edit ? 'Ketuk baris untuk mengisi · tersimpan langsung ke spreadsheet' : 'Mode baca saja') + ' · data dari spreadsheet Upcoming Event' + (S.diambil ? ' · dimuat ' + S.diambil : '') + ' · <a href="' + GITHUB + '" target="_blank" rel="noopener">Tasklist di GitHub</a></p>';
+  }
+
+  /* ---------- server Studio (Apps Script) ---------- */
+  function kunci() { try { return localStorage.getItem('studioKunci') || ''; } catch (e) { return ''; } }
+  function api(body) {
+    body.key = kunci();
+    return fetch(window.APP, { method: 'POST', body: JSON.stringify(body) })
+      .catch(function () { throw new Error('tidak_tersedia'); })
+      .then(function (r) { return r.text(); })
+      .then(function (t) { var j; try { j = JSON.parse(t); } catch (e) { throw new Error('tidak_tersedia'); } if (!j.ok) throw new Error(j.error || 'Gagal'); return j.data; });
+  }
+  function dariApi(d) {
+    var out = {}; S.idx = {};
+    d.bulan.forEach(function (b) {
+      var key = b.y + '-' + (b.m < 10 ? '0' : '') + b.m;
+      out[key] = { y: b.y, m: b.m, ed: b.ed, ev: b.ev.map(function (e) { e.ed = b.ed; S.idx[e.row] = { e: e, b: out[key] }; return e; }) };
+      out[key].ev.forEach(function (e) { S.idx[e.row].b = out[key]; });
+    });
+    S.nama = d.nama || [];
+    return out;
   }
 
   function muat() {
+    $('tlIsi').innerHTML = '<div class="garis tl-load"><i></i></div>';
+    if (window.APP && kunci()) {
+      $('tlSetup').classList.add('hidden'); $('tlUtama').classList.remove('hidden');
+      api({ action: 'data' }).then(function (d) {
+        S.data = dariApi(d); S.edit = true; S.diambil = d.waktu; render();
+      }).catch(function (err) {
+        if (err.message !== 'tidak_tersedia') { gagal(err.message); return; }
+        muatCsv();
+      });
+      return;
+    }
+    muatCsv();
+  }
+  function gagal(msg) {
+    $('tlIsi').innerHTML = '<p class="tl-kosong">' + esc(msg) + '<br><br><button type="button" class="tl-btn" id="tlUlang">Coba lagi</button></p>';
+    $('tlUlang').onclick = muat;
+  }
+
+  function muatCsv() {
+    S.edit = false;
     var link = getLink();
     $('tlSetup').classList.toggle('hidden', !!link);
     $('tlUtama').classList.toggle('hidden', !link);
@@ -183,10 +226,80 @@
     }).catch(function () {
       $('tlIsi').innerHTML = '<p class="tl-kosong">Spreadsheet tidak bisa dimuat. Periksa koneksi, atau pastikan link CSV masih dipublikasikan.<br><br>' +
         '<button type="button" class="tl-btn" id="tlUlang">Coba lagi</button> <button type="button" class="tl-btn ghost" id="tlGanti2">Ganti link</button><br><br><a href="' + GITHUB + '" target="_blank" rel="noopener">Buka tasklist di GitHub</a></p>';
-      $('tlUlang').onclick = muat; $('tlGanti2').onclick = gantiLink;
+      $('tlUlang').onclick = muatCsv; $('tlGanti2').onclick = gantiLink;
     });
   }
-  function gantiLink() { setLink(''); S.data = null; muat(); }
+  function gantiLink() { setLink(''); S.data = null; muatCsv(); }
+
+  /* ---------- isi dari aplikasi ---------- */
+  function hariIniDM() { var d = hariIniWITA(); return (d.getUTCDate() < 10 ? '0' : '') + d.getUTCDate() + '/' + (d.getUTCMonth() < 9 ? '0' : '') + (d.getUTCMonth() + 1); }
+  function simpan(e, fields, pesan) {
+    var lama = {}; Object.keys(fields).forEach(function (k) { lama[k] = e[k]; e[k] = fields[k]; });
+    render(); toast('Menyimpan…');
+    return api({ action: 'ubah', row: e.row, pr: e.pr, fields: fields }).then(function () { toast(pesan || 'Tersimpan ke spreadsheet'); })
+      .catch(function (err) { Object.keys(lama).forEach(function (k) { e[k] = lama[k]; }); render(); toast(err.message); });
+  }
+  var tT; function toast(m) { var t = $('tlToast'); t.textContent = m; t.classList.add('show'); clearTimeout(tT); tT = setTimeout(function () { t.classList.remove('show'); }, 2600); }
+
+  var FORM = [
+    ['Jadwal & tim', [['jam', 'Jam / tempat'], ['fg1', 'FG 1', 1], ['fg2', 'FG 2', 1], ['vg', 'VG', 1], ['sup', 'Support', 1]]],
+    ['Edit foto', [['edF', 'Editor foto', 1], ['dlF', 'Deadline edit foto (tgl/bln)'], ['okF', 'Tgl selesai edit foto (tgl/bln)']]],
+    ['Edit video', [['edV', 'Editor video', 1], ['okV', 'Tgl selesai edit video (tgl/bln)']]],
+    ['Lainnya', [['ket', 'Keterangan']]]
+  ];
+  function bukaEditor(row) {
+    var r = S.idx[row]; if (!r) return;
+    var e = r.e, b = r.b, d = tgl(b.y, b.m, e.day);
+    var h = '<div class="grab"></div><h3>' + esc(judul(e.pr)) + '</h3><p class="tl-dl">' + HARI[d.getUTCDay()] + ', ' + e.day + ' ' + BULAN[b.m - 1].charAt(0) + BULAN[b.m - 1].slice(1).toLowerCase() + ' ' + b.y + '</p><form id="tlEd">';
+    FORM.forEach(function (g) {
+      h += '<fieldset><legend>' + g[0] + '</legend>';
+      g[1].forEach(function (f) {
+        var id = 'tlf_' + f[0], btn = /^ok/.test(f[0]) ? '<button type="button" class="tl-mini" data-today="' + id + '">Hari ini</button>' : '';
+        h += '<label for="' + id + '">' + f[1] + '</label><div class="tl-row"><input id="' + id + '" name="' + f[0] + '" value="' + esc(e[f[0]] || '') + '"' + (f[2] ? ' list="tlNama"' : '') + ' autocomplete="off">' + btn + '</div>';
+      });
+      h += '</fieldset>';
+    });
+    h += '<div class="tl-act"><button type="button" class="tl-btn ghost" id="tlBatal">Batal</button><button type="submit" class="tl-btn">Simpan</button></div></form>';
+    $('tlSheet').innerHTML = h; $('tlOv').classList.remove('hidden');
+    Array.prototype.forEach.call($('tlSheet').querySelectorAll('[data-today]'), function (bt) { bt.onclick = function () { $(bt.getAttribute('data-today')).value = hariIniDM(); }; });
+    $('tlBatal').onclick = tutup;
+    $('tlEd').onsubmit = function (ev) {
+      ev.preventDefault();
+      var ubah = {}, n = 0;
+      Array.prototype.forEach.call($('tlEd').querySelectorAll('input'), function (i) { var v = norm(i.value); if (v !== norm(e[i.name])) { ubah[i.name] = v; n++; } });
+      tutup(); if (n) simpan(e, ubah);
+    };
+  }
+  function bukaTambah() {
+    var b = S.data[S.bulan];
+    var h = '<div class="grab"></div><h3>Tambah event · ' + BULAN[b.m - 1].charAt(0) + BULAN[b.m - 1].slice(1).toLowerCase() + ' ' + b.y + '</h3><form id="tlAdd">' +
+      '<label for="tla_day">Tanggal</label><input id="tla_day" type="number" min="1" max="31" inputmode="numeric" required>' +
+      '<label for="tla_pr">Prosesi (contoh: Akad Resepsi Nama &amp; Nama)</label><input id="tla_pr" required autocomplete="off">' +
+      '<label for="tla_jam">Jam / tempat</label><input id="tla_jam" autocomplete="off">' +
+      '<div class="tl-act"><button type="button" class="tl-btn ghost" id="tlBatal">Batal</button><button type="submit" class="tl-btn">Tambah</button></div></form>';
+    $('tlSheet').innerHTML = h; $('tlOv').classList.remove('hidden');
+    $('tlBatal').onclick = tutup;
+    $('tlAdd').onsubmit = function (ev) {
+      ev.preventDefault();
+      var q = { action: 'tambah', y: b.y, m: b.m, day: $('tla_day').value, pr: norm($('tla_pr').value), jam: norm($('tla_jam').value) };
+      tutup(); toast('Menambahkan…');
+      api(q).then(function () { toast('Event ditambahkan ke spreadsheet'); muat(); }).catch(function (err) { toast(err.message); });
+    };
+  }
+  function tutup() { $('tlOv').classList.add('hidden'); }
+  function klik(ev) {
+    if (!S.edit) return;
+    if (ev.target.id === 'tlTambah') { bukaTambah(); return; }
+    var li = ev.target.closest('li[data-row]'); if (!li) return;
+    var row = +li.getAttribute('data-row'), j = li.getAttribute('data-j');
+    if (j && ev.target.closest('.tl-box')) {             // centang cepat
+      var e = S.idx[row].e, k = j === 'foto' ? 'okF' : 'okV', f = {};
+      f[k] = kosong(e[k]) ? hariIniDM() : '';
+      simpan(e, f, f[k] ? 'Ditandai selesai ' + f[k] : 'Tanda selesai dihapus');
+      return;
+    }
+    bukaEditor(row);
+  }
 
   window.TasklistTab = {
     init: function () {
@@ -198,6 +311,14 @@
       };
       Array.prototype.forEach.call($('tlJenis').children, function (bt) { bt.onclick = function () { S.jenis = bt.getAttribute('data-j'); render(); }; });
       $('tlRefresh').onclick = muat;
+      var ov = document.createElement('div'); ov.id = 'tlOv'; ov.className = 'tl-ov hidden';
+      ov.innerHTML = '<div class="tl-sheet" id="tlSheet" role="dialog" aria-modal="true"></div>';
+      ov.onclick = function (e) { if (e.target === ov) tutup(); };
+      document.body.appendChild(ov);
+      var dl = document.createElement('datalist'); dl.id = 'tlNama'; document.body.appendChild(dl);
+      var ts = document.createElement('div'); ts.id = 'tlToast'; ts.className = 'tl-toast'; document.body.appendChild(ts);
+      $('tlIsi').addEventListener('click', klik);
+      $('tlIsi').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('li[data-row]')) { e.preventDefault(); bukaEditor(+e.target.getAttribute('data-row')); } });
       $('tlGanti').onclick = gantiLink;
     },
     tampil: function () { if (!S.data) muat(); }

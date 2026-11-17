@@ -99,6 +99,26 @@
   .tl-team{font-size:12.5px;color:#4B2A3A}
   .tl li.today .tl-date{background:#4B2A3A}
   .tl li.today .tl-date b,.tl li.today .tl-date small{color:#fff}
+  .tl li.bisa{cursor:pointer}
+  .tl li.bisa:hover .tl-pr{text-decoration:underline;text-decoration-color:#CFC6BC}
+  .tl li.bisa .tl-box{cursor:pointer}
+  .tl li:focus-visible{outline:2px solid #b08a57;outline-offset:2px;border-radius:8px}
+  .tl-aksi{margin:4px 0 0}
+  .tl-ov{position:fixed;inset:0;z-index:20;background:rgba(29,26,27,.45);display:flex;align-items:flex-end;justify-content:center}
+  .tl-sheet{background:#F1EEEA;width:100%;max-width:720px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px))}
+  .tl-sheet .grab{width:40px;height:4px;border-radius:4px;background:#D9D1C7;margin:4px auto 12px}
+  .tl-sheet h3{font:400 24px/1.2 "Bodoni Moda",Georgia,serif;color:#4B2A3A;margin:0 0 2px}
+  .tl-sheet form{display:block;width:auto;margin:8px 0 0}
+  .tl-sheet fieldset{border:1px solid #E2DCD5;background:#fff;border-radius:14px;margin:10px 0 0;padding:6px 14px 12px}
+  .tl-sheet legend{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#77706B;padding:0 4px}
+  .tl-sheet label{display:block;font-size:13px;color:#77706B;margin:8px 0 4px}
+  .tl-sheet input{width:100%;box-sizing:border-box}
+  .tl-row{display:flex;gap:8px}
+  .tl-mini{flex:0 0 auto;padding:8px 12px;font-size:13px;background:#fff;color:#4B2A3A;border:1px solid #E2DCD5}
+  .tl-act{display:flex;gap:10px;margin-top:14px}
+  .tl-act .tl-btn{flex:1}
+  .tl-toast{position:fixed;left:50%;bottom:calc(var(--tab) + 16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;background:#1D1A1B;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px);text-align:center}
+  .tl-toast.show{opacity:1}
   .tl-now{font-style:normal;font-size:11px;font-weight:600;background:#b08a57;color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:2px}
   @media (prefers-reduced-motion:reduce){.garis i{animation:none;width:100%}}
 </style>
