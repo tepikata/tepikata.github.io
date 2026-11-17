@@ -225,7 +225,7 @@
     memuat();
     if (window.APP && kunci()) {
       $('tlSetup').classList.add('hidden'); $('tlUtama').classList.remove('hidden');
-      api({ action: 'data' }).then(function (d) { S.data = dariApi(d); S.edit = true; S.diambil = d.waktu; render(); })
+      api({ action: 'data' }).then(function (d) { S.data = dariApi(d); S.edit = true; S.diambil = d.waktu; render(); kbStatus(); })
         .catch(function (err) { if (err.message !== 'tidak_tersedia') { gagal(err.message, muat); return; } muatCsv(); });
       return;
     }
@@ -245,7 +245,7 @@
     memuat();
     fetch(link, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function (txt) {
       if (/^\s*</.test(txt)) throw new Error('bukan CSV');
-      S.data = bacaJadwal(parseCSV(txt));
+      S.data = bacaJadwal(parseCSV(txt)); kbStatus();
       var d = new Date(); S.diambil = (d.getHours() < 10 ? '0' : '') + d.getHours() + '.' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
       render();
     }).catch(function () { gagal('Spreadsheet tidak bisa dimuat. Periksa koneksi, atau pastikan link CSV masih dipublikasikan.', muatCsv); });
@@ -321,6 +321,70 @@
     }
     bukaEditor(row);
   }
+
+  /* ---------- tab Klien Baru ---------- */
+  var JENIS = ['Lamaran', 'Mappettuada', 'Pengajian', 'Siraman', 'Mappacci', 'Siraman Mappacci', 'Akad', 'Resepsi', 'Akad Resepsi', 'Mapparola', 'Pemberkatan', 'Pemberkatan Resepsi', 'Prewed', 'Wedding', 'Event'];
+  var kbN = 0;
+  function kbSesi(isi) {
+    isi = isi || {}; kbN++;
+    var id = 'kb' + kbN, el = document.createElement('div');
+    el.className = 'box kb-sesi'; el.setAttribute('data-sesi', id);
+    var f = function (k, label, tipe, list, ph) {
+      return '<label class="f" for="' + id + k + '">' + label + '</label><input class="inp" id="' + id + k + '" data-k="' + k + '" type="' + (tipe || 'text') + '"' +
+        (list ? ' list="' + list + '"' : '') + (ph ? ' placeholder="' + ph + '"' : '') + ' autocomplete="off" value="' + esc(isi[k] || '') + '">';
+    };
+    el.innerHTML = '<div class="kb-hd"><h3>Sesi</h3><button type="button" class="linkbtn" data-hapus="1">Hapus</button></div>' +
+      f('jenis', 'Prosesi', 'text', 'kbJenis', 'Pilih atau ketik, mis. Akad Resepsi') +
+      '<div class="kb-2">' + '<div>' + f('tgl', 'Tanggal', 'date') + '</div><div>' + f('jam', 'Jam / tempat', 'text', '', 'mis. 08.00 / Gedung') + '</div></div>' +
+      '<div class="kb-2"><div>' + f('fg1', 'FG 1', 'text', 'tlNama') + '</div><div>' + f('fg2', 'FG 2', 'text', 'tlNama') + '</div></div>' +
+      '<div class="kb-2"><div>' + f('vg', 'VG', 'text', 'tlNama') + '</div><div>' + f('sup', 'Support', 'text', 'tlNama') + '</div></div>';
+    $('kbDaftar').appendChild(el);
+    kbNomor();
+  }
+  function kbNomor() {
+    var all = $('kbDaftar').querySelectorAll('[data-sesi]');
+    Array.prototype.forEach.call(all, function (el, i) { el.querySelector('h3').textContent = 'Sesi ' + (i + 1); el.querySelector('[data-hapus]').classList.toggle('hidden', all.length < 2); });
+  }
+  function kbStatus() {
+    if (!$('kbInfo')) return;
+    $('kbInfo').classList.toggle('hidden', !!S.edit || !S.data);
+    $('kbKirim').disabled = !S.edit;
+  }
+  function kbReset() { $('kbForm').reset(); $('kbDaftar').innerHTML = ''; kbSesi(); }
+  function kbKirim(ev) {
+    ev.preventDefault();
+    var nama = norm($('kbNama').value), sesi = [], salah = '';
+    Array.prototype.forEach.call($('kbDaftar').querySelectorAll('[data-sesi]'), function (el, i) {
+      var x = {}; Array.prototype.forEach.call(el.querySelectorAll('[data-k]'), function (inp) { x[inp.getAttribute('data-k')] = norm(inp.value); });
+      if (!x.jenis && !salah) salah = 'Isi prosesi untuk sesi ' + (i + 1) + '.';
+      if (!x.tgl && !salah) salah = 'Isi tanggal untuk sesi ' + (i + 1) + '.';
+      sesi.push(x);
+    });
+    if (!nama) salah = 'Isi nama klien.';
+    if (salah) { toast(salah); return; }
+    var bt = $('kbKirim'); bt.disabled = true; bt.textContent = 'Menyimpan…';
+    api({ action: 'tambahKlien', nama: nama, sesi: sesi, ket: norm($('kbKet').value) }).then(function (r) {
+      bt.disabled = false; bt.textContent = 'Simpan ke jadwal';
+      toast(nama + ' ditambahkan (' + sesi.length + ' sesi)');
+      kbReset();
+      S.bulan = r.bulan; S.jenis = 'jadwal'; S.filter = ''; S.data = null;
+      if (window.pilihTab) window.pilihTab('event'); else muat();
+    }).catch(function (err) {
+      bt.disabled = false; bt.textContent = 'Simpan ke jadwal';
+      toast(err.message === 'tidak_tersedia' ? 'Belum aktif: pasang Event.gs dulu (halaman bantuan bagian 6).' : err.message);
+    });
+  }
+  window.KlienBaru = {
+    init: function () {
+      var dl = document.createElement('datalist'); dl.id = 'kbJenis';
+      dl.innerHTML = JENIS.map(function (j) { return '<option value="' + j + '">'; }).join(''); document.body.appendChild(dl);
+      $('kbTambahSesi').onclick = function () { kbSesi(); };
+      $('kbDaftar').addEventListener('click', function (e) { if (e.target.closest('[data-hapus]')) { e.target.closest('[data-sesi]').remove(); kbNomor(); } });
+      $('kbForm').onsubmit = kbKirim;
+      kbSesi();
+    },
+    tampil: function () { if (!S.data) muat(); kbStatus(); }
+  };
 
   window.TasklistTab = {
     init: function () {
