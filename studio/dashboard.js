@@ -528,9 +528,71 @@
     '.tls.dk-ov .wjb{font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 7px;margin-left:4px;letter-spacing:.02em}',
     '.tls.dk-ov label.f.kosong{color:#B3352A}',
     '.tls.dk-ov .inp.kosong{border-color:#C9473A;background-color:#FFF4F1;box-shadow:0 0 0 3px rgba(201,71,58,.12)}',
+    '.tls.dk{isolation:isolate}',
+    '.dk-latar{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:var(--bg)}',
+    '.dk-latar figure{position:absolute;margin:0;transform:rotate(var(--r));box-shadow:0 10px 26px rgba(46,26,36,.22);opacity:0;transition:opacity 1.2s ease;transition-delay:var(--d)}',
+    '.dk-latar figure.ok{opacity:1}',
+    '.dk-latar figure.cetak{background:#F6F0E7;padding:6px 6px 22px;border-radius:2px}',
+    '.dk-latar figure.pita::before{content:"";position:absolute;left:50%;top:-9px;width:54px;height:18px;margin-left:-27px;background:rgba(233,220,196,.82);transform:rotate(-3deg);box-shadow:0 1px 2px rgba(0,0,0,.08)}',
+    '.dk-latar img{display:block;width:100%;height:100%;object-fit:cover;filter:sepia(.18) saturate(.9) contrast(.96)}',
+    '.dk-latar::after{content:"";position:absolute;inset:0;z-index:20;background:radial-gradient(120% 90% at 50% 40%,rgba(243,239,233,.58),rgba(243,239,233,.7))}',
+    '.dk-arsip{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity 1.4s ease}',
+    '.dk-arsip.ada{opacity:1}',
+    '.dk-arsip figure{position:absolute;margin:0;width:clamp(120px,calc(var(--w) * 1%),230px);aspect-ratio:3/2;background:#EFE6DA;padding:5px 5px 14px;border-radius:2px;box-shadow:0 14px 30px rgba(0,0,0,.4);transform:rotate(var(--r))}',
+    '.dk-arsip img{display:block;width:100%;height:100%;object-fit:cover;filter:sepia(.4) saturate(.7) contrast(.92) brightness(.92)}',
+    '.dk-arsip::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(46,26,36,.95) 0%,rgba(46,26,36,0) 34%),linear-gradient(90deg,rgba(46,26,36,.97) 0%,rgba(46,26,36,.9) 38%,rgba(46,26,36,.6) 68%,rgba(46,26,36,.42) 100%)}',
+    '@media (max-width:640px){.dk-arsip::after{background:linear-gradient(0deg,rgba(46,26,36,.96) 0%,rgba(46,26,36,.2) 40%),linear-gradient(180deg,rgba(46,26,36,.72),rgba(46,26,36,.8))}}',
+    '@media (prefers-reduced-motion:reduce){.dk-latar figure,.dk-arsip{transition:none}}',
     '@media (max-width:420px){.tls.dk .dk-hero .sum button{padding:12px 11px 11px;border-radius:15px}.tls.dk .dk-hero .sum button b{font-size:34px}}'
   ].join('\n');
   var HERO = { evView: ['ev', ['evSum'], 'evBulan'], foView: ['fo', ['foSum', 'foEd'], 'foBulan'], viView: ['vi', ['viSum', 'viPj'], 'viBulan'], kbView: ['kb', [], ''] };
+  /* ---------- latar kolase foto (sama dengan tab Data Klien; foto dari studioArsip di Kode.gs) ---------- */
+  var ARSIP = null;
+  var SLOT = {   // posisi cetakan foto di kepala (persen) — layar lebar / sempit
+    lebar: [[34, -6, 17], [52, 4, 18], [71, -8, 17], [88, 4, 16], [40, 36, 16], [58, 42, 17], [77, 34, 18], [32, 70, 15], [66, 74, 16]],
+    sempit: [[-8, -4, 40], [30, -8, 40], [68, 0, 40], [8, 26, 38], [46, 30, 40], [84, 28, 36], [-6, 58, 40], [34, 62, 38], [72, 60, 40]]
+  };
+  function thumb(id, w) { return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + w; }
+  function gambar(f, id, w, ok) {
+    var im = new Image(); im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer';
+    im.onload = function () { f.classList.add('ok'); if (ok) ok(); }; im.onerror = function () { f.remove(); };
+    im.src = thumb(id, w); f.appendChild(im);
+  }
+  function latarHalaman(box) {      // cetakan foto berserakan di belakang daftar
+    var W = innerWidth, H = innerHeight, kolom = W < 640 ? 3 : 5, sel = W / kolom, tinggiSel = sel * 0.78;
+    var baris = Math.ceil(H / tinggiSel) + 1, rnd = function (a, b) { return a + Math.random() * (b - a); }, RASIO = [3 / 2, 4 / 5, 1, 3 / 2, 4 / 5], n = 0;
+    box.innerHTML = '';
+    for (var r = 0; r < baris; r++) for (var c = 0; c < kolom; c++) {
+      var lebar = sel * rnd(.78, 1.12), rasio = RASIO[Math.floor(Math.random() * RASIO.length)], cetak = Math.random() < .6;
+      var tinggi = lebar / rasio + (cetak ? 16 : 0), x = (c + .5 + rnd(-.28, .28)) * sel - lebar / 2, y = (r + .5 + rnd(-.3, .3)) * tinggiSel - tinggi / 2;
+      var f = document.createElement('figure');
+      f.className = (cetak ? 'cetak' : '') + (Math.random() < .22 ? ' pita' : '');
+      f.style.cssText = 'left:' + x.toFixed(0) + 'px;top:' + y.toFixed(0) + 'px;width:' + lebar.toFixed(0) + 'px;height:' + tinggi.toFixed(0) + 'px;--r:' + rnd(-9, 9).toFixed(1) +
+        'deg;z-index:' + Math.floor(rnd(1, 9)) + ';--d:' + (n * 40) + 'ms';
+      gambar(f, ARSIP[n % ARSIP.length], 400); box.appendChild(f); n++;
+    }
+  }
+  function latarKepala(box) {       // cetakan foto di belakang judul bulan
+    var slot = innerWidth < 640 ? SLOT.sempit : SLOT.lebar, siap = 0;
+    box.innerHTML = '';
+    ARSIP.slice(0, slot.length).forEach(function (id, i) {
+      var f = document.createElement('figure'), p = slot[i];
+      f.style.cssText = 'left:' + p[0] + '%;top:' + p[1] + '%;--w:' + p[2] + ';--r:' + (Math.random() * 14 - 7).toFixed(1) + 'deg';
+      gambar(f, id, 480, function () { if (++siap === 2) box.classList.add('ada'); });
+      box.appendChild(f);
+    });
+  }
+  function muatArsip() {
+    api({ action: 'arsip', jumlah: 30 }).then(function (ids) {
+      if (!ids || !ids.length) return;
+      ARSIP = ids;
+      Object.keys(HERO).forEach(function (id) {
+        var v = $(id); if (!v || !v.classList.contains('dk')) return;
+        latarHalaman(v.querySelector('.dk-latar')); latarKepala(v.querySelector('.dk-arsip'));
+      });
+    }).catch(function () { });   // server lama / tanpa foto: latar polos
+  }
+
   function pasangTema() {
     if (!$('dkTema')) { var st = document.createElement('style'); st.id = 'dkTema'; st.textContent = TEMA; document.head.appendChild(st); }
     Object.keys(HERO).forEach(function (id) {
@@ -538,12 +600,14 @@
       var hdr = v.querySelector('header'); if (!hdr) return;
       v.classList.add('dk');
       var sec = document.createElement('section'); sec.className = 'dk-hero'; sec.id = x[0] + 'Hero';
-      sec.innerHTML = '<div class="wrap"><div class="dk-teks"></div><div class="dk-slot"></div></div>';
+      sec.innerHTML = '<div class="dk-arsip" aria-hidden="true"></div><div class="wrap"><div class="dk-teks"></div><div class="dk-slot"></div></div>';
       hdr.parentNode.insertBefore(sec, hdr.nextSibling);
+      var lt = document.createElement('div'); lt.className = 'dk-latar'; lt.setAttribute('aria-hidden', 'true'); v.insertBefore(lt, v.firstChild);
       x[1].forEach(function (k) { if ($(k)) sec.querySelector('.dk-slot').appendChild($(k)); });
       if (x[2] && $(x[2])) $(x[2]).classList.add('hidden');
       v.addEventListener('scroll', function () { hdr.classList.toggle('gulir', v.scrollTop > 8); }, { passive: true });
     });
+    if (kunci()) muatArsip();
     hero('kb', 'Klien baru', 'Klien <em>baru</em>', 'Isi nama klien dan setiap sesinya. Tiap sesi menjadi satu baris jadwal.');
   }
 
