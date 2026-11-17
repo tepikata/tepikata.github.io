@@ -37,6 +37,7 @@
   }
   function klienDariSesi(label) { var p = String(label || '').split('·'); return (p.length > 1 ? p[1] : p[0]).trim(); }
   function internal(r) { return /internal/i.test(g(r, 'Event')); }
+  // Kartu tanpa _src (mis. agenda Internal dari tab AGENDA) tidak ada di EVENT DATA → hanya baca.
   /* tanda merah: kolom wajib yang masih kosong (mengikuti warna merah di tab EVENT DATA) */
   function kurangEvent(r) {        // → daftar kolom kosong; kosong = aman
     if (internal(r) || g(r, 'Status').toLowerCase().indexOf('selesai') >= 0) return [];
@@ -165,7 +166,7 @@
       return kepala + kartu(tglBox(g(r, 'Tanggal'), g(r, 'Hari')) +
         '<span class="main"><span class="nm">' + esc(g(r, 'Event').replace(/^\W+\s*/, '')) + ' <span class="sub">· ' + esc(g(r, 'Sesi')) + '</span></span>' +
         (meta.length ? '<span class="meta">' + meta.join('') + '</span>' : '') + (tim.length ? '<span class="meta">' + tim.join('') + '</span>' : '') + cat + '</span>' + pill,
-        ' ev' + (lewat ? ' past' : '') + (intern ? ' internal' : '') + (kurang.length ? ' merah' : ''), i, boleh);
+        ' ev' + (lewat ? ' past' : '') + (intern ? ' internal' : '') + (kurang.length ? ' merah' : ''), i, boleh && (!D.cekBaris || !!r._src));
     }).join('');
     $('evList').innerHTML = (f === 'kosong' ? '<p class="dk-saring">Hanya sesi yang FG 1 / VG-nya masih kosong · <button type="button" class="linkbtn" data-semua="event">tampilkan semua</button></p>' : '') +
       (h || '<div class="empty">Tidak ada event' + (q || f ? ' yang cocok.' : '.') + '</div>') + kaki('event');
@@ -211,7 +212,7 @@
       if (isi(g(r, 'Tgl selesai'))) meta.push('<span>Selesai ' + esc(g(r, 'Tgl selesai')) + '</span>');
       var ket = g(r, 'Keterangan');
       h += kartu('<span class="dk-av">' + esc(inisial(g(r, 'Event'))) + '</span><span class="main"><span class="nm">' + esc(g(r, 'Event')) + ' <span class="sub">· ' + esc(g(r, 'Sesi')) + '</span></span><span class="meta">' + meta.join('') + '</span></span>' +
-        (ket ? '<span class="pill ' + ketKelas(ket) + '">' + esc(ket) + '</span>' : ''), (s === 'selesai' ? ' done' : '') + (kurangFoto(r) ? ' merah' : ''), i);
+        (ket ? '<span class="pill ' + ketKelas(ket) + '">' + esc(ket) + '</span>' : ''), (s === 'selesai' ? ' done' : '') + (kurangFoto(r) ? ' merah' : ''), i, bisaUbah() && (!D.cekBaris || !!r._src));
     });
     $('foList').innerHTML = (h || '<div class="empty">Tidak ada tugas' + (q || f || ed ? ' yang cocok.' : '.') + '</div>') + kaki('foto');
   }
