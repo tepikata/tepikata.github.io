@@ -34,6 +34,72 @@
   .pasang b{font-weight:600}
   .pasang button{background:rgba(255,255,255,.14);padding:8px 12px;font-size:13px;margin-left:auto;flex:0 0 auto}
   .hidden{display:none!important}
+  /* tab bar */
+  :root{--tab:60px}
+  body.tabs iframe{bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px));height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - var(--tab))}
+  body.tabs .pasang{bottom:calc(var(--tab) + 12px + env(safe-area-inset-bottom,0px))}
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:rgba(241,238,234,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid #E2DCD5;padding:0 max(8px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(8px,env(safe-area-inset-right,0px))}
+  .tabbar button{flex:1;height:var(--tab);background:transparent;color:#77706B;border-radius:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600}
+  .tabbar button svg{width:22px;height:22px}
+  .tabbar button.on{color:#4B2A3A}
+  .tabbar button:focus-visible{outline:2px solid #b08a57;outline-offset:-4px}
+  /* tasklist */
+  .tl{position:fixed;left:0;right:0;top:0;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;background:#F1EEEA;z-index:4;padding:env(safe-area-inset-top,0px) 0 24px}
+  .tl-in{max-width:720px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left,0px)) 0 max(16px,env(safe-area-inset-right,0px))}
+  .tl-hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .tl-hd h2{font:400 30px/1.1 "Bodoni Moda",Georgia,serif;color:#4B2A3A;margin:6px 0}
+  .tl-hd .ic{display:flex;gap:8px}
+  .tl-hd .ic button{background:#fff;color:#4B2A3A;border:1px solid #E2DCD5;padding:8px 12px;font-size:13px}
+  .tl-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}
+  .tl-chips::-webkit-scrollbar{display:none}
+  .tl-chips button{flex:0 0 auto;background:#fff;color:#1D1A1B;border:1px solid #E2DCD5;border-radius:999px;padding:7px 14px;font-size:13.5px}
+  .tl-chips button.on{background:#4B2A3A;border-color:#4B2A3A;color:#fff}
+  .tl-seg{display:flex;background:#E8E2DA;border-radius:12px;padding:3px;gap:3px;margin:12px 0}
+  .tl-seg button{flex:1;background:transparent;color:#77706B;padding:9px;border-radius:10px;font-size:14px}
+  .tl-seg button.on{background:#fff;color:#1D1A1B;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .tl-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+  .tl-sum div{background:#fff;border:1px solid #E2DCD5;border-radius:14px;padding:10px 12px}
+  .tl-sum b{display:block;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;color:#1D1A1B}
+  .tl-sum b small{font-size:14px;color:#77706B;font-weight:500}
+  .tl-sum span{font-size:12px;color:#77706B}
+  .tl-sum .warn b{color:#A33A2B}
+  .tl-grp{background:#fff;border:1px solid #E2DCD5;border-radius:16px;padding:12px 14px;margin-top:10px}
+  .tl-grp h3,.tl-grp summary{margin:0;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:default}
+  .tl-grp summary{cursor:pointer;list-style:none}
+  .tl-grp summary::-webkit-details-marker{display:none}
+  .tl-grp h3 span,.tl-grp summary span{font-size:13px;color:#77706B;font-variant-numeric:tabular-nums}
+  .tl-warn{border-color:#E9C7BF;background:#FDF6F4}
+  .tl-bar{height:5px;border-radius:5px;background:#EFE9E1;margin:8px 0 2px;overflow:hidden}
+  .tl-bar i{display:block;height:100%;background:#b08a57}
+  .tl ul{list-style:none;margin:6px 0 0;padding:0}
+  .tl li{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid #F1ECE6}
+  .tl li:first-child{border-top:0}
+  .tl-box{flex:0 0 22px;height:22px;border-radius:7px;border:2px solid #CFC6BC;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;margin-top:1px}
+  .tl li.done .tl-box{background:#2F7D4F;border-color:#2F7D4F}
+  .tl-tgl{flex:0 0 26px;font-weight:600;color:#77706B;font-variant-numeric:tabular-nums;text-align:right}
+  .tl-main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .tl-pr{overflow-wrap:anywhere}
+  .tl li.done .tl-pr{color:#77706B}
+  .tl-ok{font-size:12.5px;color:#2F7D4F;font-weight:600}
+  .tl-dl{font-size:12.5px;color:#77706B}
+  .tl-late{font-size:12.5px;color:#A33A2B;font-weight:600}
+  .tl-kosong{text-align:center;color:#77706B;padding:24px 8px}
+  .tl-foot{text-align:center;color:#77706B;font-size:12.5px;margin-top:16px}
+  .tl-foot a,.tl-kosong a{color:#4B2A3A}
+  .tl-btn{padding:10px 14px;font-size:14px}
+  .tl-btn.ghost{background:#fff;color:#4B2A3A;border:1px solid #E2DCD5}
+  .tl-setup{background:#fff;border:1px solid #E2DCD5;border-radius:16px;padding:16px;margin-top:14px}
+  .tl-setup p{max-width:none;margin:0 0 10px}
+  .tl-setup form{margin-top:0;width:auto}
+  .tl-err{color:#A33A2B;font-size:13px;min-height:1em}
+  .tl-load{margin:40px auto}
+  .tl-date{flex:0 0 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F6F1EB;border-radius:10px;padding:4px 0;line-height:1.1}
+  .tl-date b{font-size:17px;color:#4B2A3A;font-variant-numeric:tabular-nums}
+  .tl-date small{font-size:11px;color:#77706B;text-transform:uppercase;letter-spacing:.04em}
+  .tl-team{font-size:12.5px;color:#4B2A3A}
+  .tl li.today .tl-date{background:#4B2A3A}
+  .tl li.today .tl-date b,.tl li.today .tl-date small{color:#fff}
+  .tl-now{font-style:normal;font-size:11px;font-weight:600;background:#b08a57;color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:2px}
   @media (prefers-reduced-motion:reduce){.garis i{animation:none;width:100%}}
 </style>
 </head>
@@ -50,7 +116,29 @@
     </form>
   </div>
 </div>
+<div class="tl hidden" id="tlView" role="region" aria-label="Upcoming event dan tasklist">
+  <div class="tl-in">
+    <div class="tl-hd"><h2>Upcoming Event</h2><div class="ic"><button type="button" id="tlRefresh" aria-label="Muat ulang">↻ Muat ulang</button></div></div>
+    <div id="tlSetup" class="tl-setup hidden">
+      <p><b>Sambungkan spreadsheet jadwal (sekali per perangkat).</b></p>
+      <p>Tempel link CSV dari spreadsheet <i>UPCOMING EVENT &amp; KOMPOSISI TIM</i> (File → Bagikan → Publikasikan ke web → .csv). Link disimpan hanya di perangkat ini.</p>
+      <form id="tlForm"><input id="tlLink" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/…output=csv" autocomplete="off" required><button type="submit">Sambungkan</button></form>
+      <p class="tl-err" id="tlErr"></p>
+    </div>
+    <div id="tlUtama" class="hidden">
+      <div class="tl-chips" id="tlBulan" aria-label="Pilih bulan"></div>
+      <div class="tl-seg" id="tlJenis"><button type="button" data-j="jadwal" class="on">📅 Jadwal</button><button type="button" data-j="foto">📷 Edit Foto</button><button type="button" data-j="video">🎬 Edit Video</button></div>
+      <div id="tlIsi"></div>
+      <p class="tl-foot"><button type="button" class="tl-btn ghost" id="tlGanti">Ganti link spreadsheet</button></p>
+    </div>
+  </div>
+</div>
+<nav class="tabbar hidden" id="tabbar" aria-label="Menu Studio">
+  <button type="button" data-tab="klien" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.2c2.2.2 3.9 1.8 4.4 4.8"/></svg>Data Klien</button>
+  <button type="button" data-tab="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5l1.5 1.5 3-3"/></svg>Upcoming Event</button>
+</nav>
 <div class="pasang hidden" id="pasang"><span>Pasang sebagai aplikasi: tekan <b>Bagikan</b>, lalu <b>Tambah ke Layar Utama</b>.</span><button type="button" id="tutup">Tutup</button></div>
+<script src="tasklist.js"></script>
 <script>
   // Aplikasi Studio Tepi Kata. Kunci admin disimpan di bagian # link (tidak pernah terkirim ke server GitHub).
   var APP = 'https://script.google.com/macros/s/AKfycbw-JPq01HTHxvZ8WKSyY6nR40I8wEwPrNfW8CS8fhjV1-ELpqUAQYsTbr8T_tA6gzg/exec';
@@ -67,6 +155,25 @@
     f.allow = 'clipboard-write';
     f.onload = function () { f.className = 'ok'; document.getElementById('layar').className = 'layar pergi'; };
     document.body.appendChild(f);
+    pasangTab();
+  }
+  // Tab Klien / Tasklist (muncul setelah masuk Studio)
+  function pilihTab(t) {
+    var tl = t === 'event';
+    document.getElementById('tlView').classList.toggle('hidden', !tl);
+    Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); });
+    if (tl) TasklistTab.tampil();
+    try { localStorage.setItem('studioTab', t); } catch (e) { }
+  }
+  function pasangTab() {
+    if (!window.TasklistTab || document.body.classList.contains('tabs')) return;
+    TasklistTab.init();
+    document.body.classList.add('tabs');
+    document.getElementById('tabbar').classList.remove('hidden');
+    Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) { b.onclick = function () { pilihTab(b.getAttribute('data-tab')); }; });
+    var t = 'klien'; try { t = localStorage.getItem('studioTab') || 'klien'; } catch (e) { }
+    if (t !== 'event') t = 'klien';
+    pilihTab(t);
   }
   var kunci = bersih(location.hash) || ambil();
   if (kunci) { simpan(kunci); if (!location.hash) history.replaceState(null, '', '#' + kunci); buka(kunci); }
