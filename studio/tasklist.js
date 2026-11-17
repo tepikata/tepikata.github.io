@@ -345,8 +345,10 @@
     var all = $('kbDaftar').querySelectorAll('[data-sesi]');
     Array.prototype.forEach.call(all, function (el, i) { el.querySelector('h3').textContent = 'Sesi ' + (i + 1); el.querySelector('[data-hapus]').classList.toggle('hidden', all.length < 2); });
   }
+  var KB_DITUNDA = true; // spreadsheet jadwal pindah ke Dashboard Operasional — penyimpanan menunggu penyesuaian tab EVENT DATA
   function kbStatus() {
     if (!$('kbInfo')) return;
+    if (KB_DITUNDA) { $('kbInfo').classList.remove('hidden'); $('kbKirim').disabled = true; return; }
     $('kbInfo').classList.toggle('hidden', !!S.edit || !S.data);
     $('kbKirim').disabled = !S.edit;
   }
@@ -383,7 +385,7 @@
       $('kbForm').onsubmit = kbKirim;
       kbSesi();
     },
-    tampil: function () { if (!S.data) muat(); kbStatus(); }
+    tampil: function () { if (!KB_DITUNDA && !S.data) muat(); kbStatus(); }
   };
 
   window.TasklistTab = {
