@@ -1,9 +1,9 @@
 /* Tab Upcoming Event, Tugas Foto, Tugas Video — dari spreadsheet "TEPIKATA - Dashboard Operasional".
  * Dibaca lewat server Studio (Apps Script, Event.gs → action "dashboard").
- * Upcoming, Tugas Foto & Tugas Video bisa diubah dari aplikasi (Event.gs → "dbUbah" / "dbTambahVideo"):
+ * Upcoming, Tugas Foto & Tugas Video bisa diubah dari aplikasi (Event.gs → "dbUbah"):
  *   event → tab EVENT DATA (Jam, Lokasi, Add-on, FG 1, FG 2, VG, Support, Status, Catatan)
  *   foto  → tab EVENT DATA (Editor foto, Status foto, Tgl selesai foto)
- *   video → tab TUGAS VIDEO (Jenis tugas, Sesi, Penanggung jawab, Status, Tanggal selesai, Catatan)
+ *   video → tampilan dari tab TUGAS VIDEO, disimpan ke tab VIDEO DATA (Editor video, Status, Tgl selesai, Catatan / link hasil)
  * Kolom dicari berdasarkan NAMA judul, jadi aman bila urutan kolom di spreadsheet berubah.
  * Tampilan (kepala plum, judul Bodoni, kartu putih bertile emas) mengikuti tab Data Klien — lihat TEMA di bawah.
  */
@@ -12,7 +12,7 @@
   var HARI = { Senin: 'Sen', Selasa: 'Sel', Rabu: 'Rab', Kamis: 'Kam', Jumat: 'Jum', "Jum'at": 'Jum', Sabtu: 'Sab', Minggu: 'Min' };
   var PERLU_SERVER = 'Server Studio belum diperbarui untuk Dashboard Operasional. Pasang Event.gs terbaru (halaman bantuan, bagian 6).';
   var D = null, memuat = null, diambil = '';
-  var F = { event: { f: '', q: '' }, foto: { f: '', ed: '', q: '' }, video: { f: '', pj: '', q: '' } };
+  var F = { event: { f: '', q: '' }, foto: { f: '', ed: '', q: '' }, video: { f: '', ed: '', q: '' } };
   var LIST = { event: [], foto: [], video: [] };   // baris yang sedang tampil (untuk dibuka saat kartu diketuk)
   var aktif = 'event';
 
@@ -44,7 +44,7 @@
     return ['FG 1', 'VG'].filter(function (k) { return !isi(g(r, k)); });
   }
   function kurangFoto(r) { return stFoto(r) !== 'selesai' && !isi(g(r, 'Editor foto')); }
-  function kurangVideo(r) { return stVideo(r) !== 'selesai' && !isi(g(r, 'Penanggung jawab')); }
+  function kurangVideo(r) { var s = stVideo(r); return s !== 'selesai' && s !== 'nanti' && !isi(g(r, 'Editor video')); }
   function grup(judul, n, satuan) { return '<h3 class="grp">' + esc(judul) + ' <small>' + n + ' ' + satuan + '</small></h3>'; }
 
   /* ---------- tanggal ---------- */
@@ -253,51 +253,69 @@
     $('foList').innerHTML = (h || '<div class="empty">Tidak ada tugas' + (q || f || ed ? ' yang cocok.' : '.') + '</div>') + kaki('foto');
   }
 
-  /* ---------- Tugas Video ---------- */
-  function stVideo(r) { var s = g(r, 'Status').toLowerCase(); return s === 'selesai' ? 'selesai' : s === 'dikerjakan' ? 'proses' : 'antre'; }
+  /* ---------- Tugas Video (tab TUGAS VIDEO, isinya dari VIDEO DATA) — tampilan sama dengan Tugas Foto ---------- */
+  function stVideo(r) {
+    var s = g(r, 'Status').toLowerCase(), k = g(r, 'Keterangan').toLowerCase();
+    return s === 'selesai' ? 'selesai' : /belum sesi/.test(k) ? 'nanti' : (s === 'dikerjakan' || s === 'review') ? 'proses' : 'antre';
+  }
+  function judulVideo(r) { return esc(g(r, 'Klien')) + ' <span class="sub">· ' + esc(g(r, 'Jenis video')) + '</span>'; }
   function viewVideo() {
     var t = D.video;
     if (!t.ada) return kosong('viList', 'Tab TUGAS VIDEO tidak ditemukan di spreadsheet.', 'video');
-    var rows = t.baris.filter(function (r) { return isi(g(r, 'Sesi')); });
-    var bulan = []; rows.forEach(function (r) { var b = g(r, 'Bulan'); if (isi(b) && bulan.indexOf(b) < 0) bulan.push(b); });
-    $('viBulan').innerHTML = bulan.map(function (b) { return '<span class="tag">' + esc(b) + '</span>'; }).join('');
+    $('viBulan').innerHTML = bulanLabel(t);
+    var rows = t.baris.filter(function (r) { return isi(g(r, 'Klien')); });
     var st = stVideo;
-    var c = { antre: 0, proses: 0, selesai: 0 }, telat = 0;
-    rows.forEach(function (r) { c[st(r)]++; if (/telat|terlambat|lewat/i.test(g(r, 'Keterangan'))) telat++; });
-    var tanpaPj = rows.filter(kurangVideo).length;
-    hero('vi', 'Tugas edit video', bulan.length === 1 ? judulBulan(bulan[0]) : 'Tugas <em>video</em>',
-      '<b>' + rows.length + ' tugas video</b>' + (bulan.length > 1 ? ' (' + esc(bulan.join(', ')) + ')' : bulan.length ? ' bulan ini' : '') + '. ' +
-      c.antre + ' antre, ' + c.proses + ' dikerjakan, ' + c.selesai + ' selesai' + (telat ? ' · <b>' + telat + ' terlambat</b>' : '') +
-      (tanpaPj ? ' · <b class="dk-merah">' + tanpaPj + ' belum ada penanggung jawab</b>.' : '.'),
-      { label: 'Progres edit video', selesai: c.selesai, total: rows.length, bagian: [[c.selesai, 'b2'], [c.proses, 'b1'], [c.antre, 'b0']] });
-    ringkas('viSum', [['antre', c.antre, 'Antre / lainnya'], ['proses', c.proses, 'Dikerjakan' + (telat ? ' · ' + telat + ' terlambat' : ''), telat > 0], ['selesai', c.selesai, 'Selesai']], 'video');
-    var pj = []; rows.forEach(function (r) { var e = g(r, 'Penanggung jawab'); if (isi(e) && pj.indexOf(e) < 0) pj.push(e); });
-    chips('viPj', 'Penanggung jawab', pj.sort(), F.video.pj, 'video', 'pj');
-    var q = F.video.q, f = F.video.f, p = F.video.pj;
-    var list = rows.filter(function (r) { return (!f || st(r) === f) && (!p || g(r, 'Penanggung jawab') === p) && cocok(q, [g(r, 'Sesi'), g(r, 'Jenis tugas'), g(r, 'Penanggung jawab'), g(r, 'Catatan / link hasil')].join(' ')); });
-    var urutV = { proses: 0, antre: 1, selesai: 2 };
-    list = list.map(function (r, i) { return [r, i]; }).sort(function (a, b) { return (urutV[st(a[0])] - urutV[st(b[0])]) || a[1] - b[1]; }).map(function (x) { return x[0]; });
-    LIST.video = list;
-    var jml = {}, lastV = '', judulV = { proses: 'Dikerjakan', antre: 'Antre / lainnya', selesai: 'Selesai' };
-    list.forEach(function (r) { jml[st(r)] = (jml[st(r)] || 0) + 1; });
-    var h = bisaUbah() ? '<button type="button" class="item add" data-tambah="1"><span class="plus">＋</span><span class="main"><span class="nm">Tambah tugas video</span><span class="meta">Masuk ke tab TUGAS VIDEO di spreadsheet</span></span></button>' : '';
-    h += list.map(function (r, i) {
-      var meta = [], kepala = '';
-      if (st(r) !== lastV) { lastV = st(r); kepala = grup(judulV[lastV], jml[lastV], 'tugas'); }
-      if (isi(g(r, 'Jenis tugas'))) meta.push('<span class="tag">' + esc(g(r, 'Jenis tugas')) + '</span>');
-      if (isi(g(r, 'Tanggal sesi'))) meta.push('<span>Sesi ' + esc(g(r, 'Tanggal sesi')) + '</span>');
-      if (isi(g(r, 'Penanggung jawab'))) meta.push('<span>PJ ' + esc(g(r, 'Penanggung jawab')) + '</span>');
-      else if (kurangVideo(r)) meta.push('<span class="tag merah">Penanggung jawab kosong</span>');
-      if (isi(g(r, 'Deadline')) && st(r) !== 'selesai') meta.push('<span>Deadline ' + esc(g(r, 'Deadline')) + (isi(g(r, 'Sisa hari')) ? ' (sisa ' + esc(g(r, 'Sisa hari')) + ' hari)' : '') + '</span>');
-      if (isi(g(r, 'Tanggal selesai'))) meta.push('<span>Selesai ' + esc(g(r, 'Tanggal selesai')) + '</span>');
-      var ket = g(r, 'Keterangan') || g(r, 'Status'), cat = g(r, 'Catatan / link hasil');
-      // link di catatan tidak dijadikan <a> bila kartu bisa diketuk (tombol tidak boleh berisi link) — buka lewat form
-      return kepala + kartu('<span class="dk-av">' + esc(inisial(klienDariSesi(g(r, 'Sesi')))) + '</span><span class="main"><span class="nm">' + esc(g(r, 'Sesi')) + '</span><span class="meta">' + meta.join('') + '</span>' +
-        (isi(cat) ? '<span class="cat">' + (bisaUbah() ? esc(cat) : linkify(cat)) + '</span>' : '') + '</span>' +
-        (ket ? '<span class="pill ' + (st(r) === 'selesai' ? 's2' : ketKelas(ket)) + '">' + esc(ket) + '</span>' : ''), (st(r) === 'selesai' ? ' done' : '') + (kurangVideo(r) ? ' merah' : ''), i);
+    var c = { antre: 0, proses: 0, selesai: 0, nanti: 0 }; rows.forEach(function (r) { c[st(r)]++; });
+    var telat = info(t, 'Terlambat') || String(rows.filter(function (r) { return /telat|terlambat|lewat/i.test(g(r, 'Keterangan')); }).length);
+    var tanpaEd = rows.filter(kurangVideo).length;
+    var bl = info(t, 'Bulan'), mb = bl.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);     // "01/11/2026" → "November 2026"
+    if (mb) bl = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][+mb[2] - 1] + ' ' + mb[3];
+    hero('vi', 'Tugas edit video', bl ? judulBulan(bl) : 'Tugas <em>video</em>',
+      '<b>' + rows.length + ' tugas edit video</b>. ' + c.antre + ' antre, ' + c.proses + ' dikerjakan, ' + c.selesai + ' selesai' +
+      (c.nanti > 0 ? ', ' + c.nanti + ' belum sesi' : '') + (+telat > 0 ? ' · <b>' + esc(telat) + ' terlambat</b>' : '') +
+      (tanpaEd ? ' · <b class="dk-merah">' + tanpaEd + ' belum ada editor</b>.' : '.'),
+      { label: 'Progres edit video', selesai: c.selesai, total: rows.length, bagian: [[c.selesai, 'b2'], [c.proses, 'b1'], [c.antre + c.nanti, 'b0']] });
+    ringkas('viSum', [['antre', c.antre, 'Antre'], ['proses', c.proses, 'Dikerjakan · ' + telat + ' terlambat', +telat > 0], ['selesai', c.selesai, 'Selesai']], 'video');
+    var editors = []; rows.forEach(function (r) { var e = g(r, 'Editor video'); if (isi(e) && editors.indexOf(e) < 0) editors.push(e); });
+    chips('viPj', 'Editor', editors.sort(), F.video.ed, 'video', 'ed');
+    var q = F.video.q, ed = F.video.ed;
+    // Tombol tab status: hanya satu kelompok tampil sekaligus, supaya daftar tidak terlalu panjang.
+    var nTab = { proses: 0, antre: 0, kosong: 0, nanti: 0, selesai: 0, semua: 0 };
+    rows.forEach(function (r) { if (!ed || g(r, 'Editor video') === ed) { nTab[st(r)]++; nTab.semua++; if (kurangVideo(r)) nTab.kosong++; } });
+    var f = F.video.f;
+    if (!f || (f !== 'semua' && !nTab[f] && !q)) f = ['proses', 'antre', 'kosong', 'nanti', 'selesai'].find(function (k) { return nTab[k]; }) || 'semua';
+    F.video.f = f;
+    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['kosong', 'Belum ada editor'], ['nanti', 'Belum sesi'], ['selesai', 'Selesai'], ['semua', 'Semua']];
+    $('viTab').innerHTML = TAB.map(function (x) {
+      var on = !q && f === x[0];
+      return '<button type="button" role="tab" aria-selected="' + on + '" data-t="' + x[0] + '" class="' + (on ? 'on' : '') + (x[0] === 'kosong' && nTab.kosong ? ' merah' : '') + '">' + x[1] + ' <small>' + nTab[x[0]] + '</small></button>';
     }).join('');
-    if (!list.length) h += '<div class="empty">Belum ada tugas video' + (q || f || p ? ' yang cocok.' : '.') + '</div>';
-    $('viList').innerHTML = h + kaki('video');
+    Array.prototype.forEach.call($('viTab').children, function (bt) {
+      bt.onclick = function () { F.video.f = bt.getAttribute('data-t'); if (F.video.q) { F.video.q = ''; $('viQ').value = ''; } tampilkan('video'); };
+    });
+    if (q || f === 'semua') f = '';                     // pencarian selalu mencari di semua status
+    var urut = { proses: 0, antre: 1, selesai: 2, nanti: 3 };
+    var list = rows.filter(function (r) { return (!f || (f === 'kosong' ? kurangVideo(r) : st(r) === f)) && (!ed || g(r, 'Editor video') === ed) && cocok(q, [g(r, 'Klien'), g(r, 'Jenis video'), g(r, 'Editor video'), g(r, 'VG'), g(r, 'Sesi yang masuk')].join(' ')); });
+    list = list.map(function (r, i) { return [r, i]; }).sort(function (a, b) { return (urut[st(a[0])] - urut[st(b[0])]) || a[1] - b[1]; }).map(function (x) { return x[0]; });
+    LIST.video = list;
+    var judulGrup = { proses: 'Dikerjakan', antre: 'Antre', selesai: 'Selesai', nanti: 'Belum sesi' }, last = '', h = '';
+    var jml = {}; list.forEach(function (r) { jml[st(r)] = (jml[st(r)] || 0) + 1; });
+    list.forEach(function (r, i) {
+      var s = st(r);
+      if (s !== last) { last = s; h += grup(judulGrup[s], jml[s], 'tugas'); }
+      var meta = ['<span class="tag">' + esc(g(r, 'Sesi terakhir')) + '</span>'];
+      if (isi(g(r, 'Editor video'))) meta.push('<span>Editor ' + esc(g(r, 'Editor video')) + '</span>');
+      else if (kurangVideo(r)) meta.push('<span class="tag merah">Editor video kosong</span>');
+      if (isi(g(r, 'VG'))) meta.push('<span>VG ' + esc(g(r, 'VG')) + '</span>');
+      if (isi(g(r, 'Status')) && s !== 'selesai') meta.push('<span>' + esc(g(r, 'Status')) + '</span>');
+      if (isi(g(r, 'Deadline')) && s !== 'selesai') meta.push('<span>Deadline ' + esc(g(r, 'Deadline')) + '</span>');
+      if (isi(g(r, 'Tgl selesai'))) meta.push('<span>Selesai ' + esc(g(r, 'Tgl selesai')) + '</span>');
+      var ket = g(r, 'Keterangan'), sesi = g(r, 'Sesi yang masuk');
+      h += kartu('<span class="dk-av">' + esc(inisial(g(r, 'Klien'))) + '</span><span class="main"><span class="nm">' + judulVideo(r) + '</span><span class="meta">' + meta.join('') + '</span>' +
+        (isi(sesi) ? '<span class="cat">' + esc(sesi) + '</span>' : '') + '</span>' +
+        (ket ? '<span class="pill ' + (s === 'selesai' ? 's2' : ketKelas(ket)) + '">' + esc(ket) + '</span>' : ''), (s === 'selesai' ? ' done' : '') + (kurangVideo(r) ? ' merah' : ''), i, bisaUbah() && (!D.cekBaris || !!r._src));
+    });
+    $('viList').innerHTML = (h || '<div class="empty">Tidak ada tugas video' + (q || f || ed ? ' yang cocok.' : '.') + '</div>') + kaki('video');
   }
 
   /* ---------- form isi (lembar bawah) ---------- */
@@ -379,43 +397,28 @@
     };
   }
 
-  function bukaVideo(r) {        // r = null → tugas baru
-    var P = D.pilihan || {}, baru = !r, nmPj = [], cat = r ? g(r, 'Catatan / link hasil') : '';
-    D.video.baris.forEach(function (x) { nmPj.push(g(x, 'Penanggung jawab')); });
-    var awal = r ? { jenis: g(r, 'Jenis tugas'), sesi: g(r, 'Sesi'), pj: g(r, 'Penanggung jawab'), st: g(r, 'Status'), ok: keISO(g(r, 'Tanggal selesai')), cat: cat }
-      : { jenis: '', sesi: '', pj: '', st: '', ok: '', cat: '' };
-    var stOpsi = gabung(P.stVideo && P.stVideo.length ? P.stVideo : ['Antre', 'Dikerjakan', 'Selesai']);
-    var jenisOpsi = gabung(P.jenisVideo && P.jenisVideo.length ? P.jenisVideo : ['Video']);
-    var sesiOpsi = gabung(P.sesiVideo);
-    var link = (cat.match(/https?:\/\/[^\s<]+/) || [])[0];
-    bukaSheet('<h2>' + (baru ? 'Tambah tugas video' : esc(g(r, 'Sesi'))) + '</h2>' +
-      (baru ? '<p class="note">Tersimpan sebagai baris baru di tab TUGAS VIDEO.</p>' :
-        '<p class="note">' + (isi(g(r, 'Tanggal sesi')) ? 'Sesi ' + esc(g(r, 'Tanggal sesi')) : '') + (isi(g(r, 'Deadline')) ? ' · Deadline ' + esc(g(r, 'Deadline')) : '') +
-        (link ? ' · <a href="' + esc(link) + '" target="_blank" rel="noopener">buka link hasil</a>' : '') + '</p>') +
-      (!baru && stVideo(r) !== 'selesai' ? '<div class="row"><button type="button" class="btn primary grow" id="dbCepat">✓ Tandai selesai hari ini</button></div>' : '') +
-      '<form id="dbForm"><div class="box"><h3>Tugas</h3>' +
-      pilih('dbv_jenis', 'Jenis tugas', awal.jenis, jenisOpsi, '— pilih jenis —') +
-      '<label class="f" for="dbv_sesi">Sesi</label><input class="inp" id="dbv_sesi" list="dbSesiList" autocomplete="off" placeholder="Ketik nama klien lalu pilih sesinya" value="' + esc(awal.sesi) + '">' +
-      '<datalist id="dbSesiList">' + sesiOpsi.slice().reverse().map(function (s) { return '<option value="' + esc(s) + '">'; }).join('') + '</datalist>' +
-      pilih('dbv_pj', 'Penanggung jawab', awal.pj, gabung(P.pjVideo, nmPj.sort()), '— belum ada —') +
+  function bukaVideo(r) {
+    var P = D.pilihan || {}, nmEd = [];
+    D.video.baris.forEach(function (x) { nmEd.push(g(x, 'Editor video')); });
+    var awal = { ed: g(r, 'Editor video'), st: g(r, 'Status'), ok: keISO(g(r, 'Tgl selesai')), cat: g(r, 'Catatan / link hasil') };
+    var stOpsi = gabung(P.stVideo && P.stVideo.length ? P.stVideo : ['Antre', 'Dikerjakan', 'Review', 'Selesai']);
+    var sudah = stVideo(r) === 'selesai', link = (awal.cat.match(/https?:\/\/[^\s<]+/) || [])[0];
+    bukaSheet('<h2>' + esc(g(r, 'Klien')) + ' · ' + esc(g(r, 'Jenis video')) + '</h2>' +
+      '<p class="note">Sesi ' + esc(g(r, 'Sesi yang masuk') || g(r, 'Sesi terakhir')) + (isi(g(r, 'VG')) ? ' · VG ' + esc(g(r, 'VG')) : '') + (isi(g(r, 'Deadline')) ? ' · Deadline ' + esc(g(r, 'Deadline')) : '') +
+      (link ? ' · <a href="' + esc(link) + '" target="_blank" rel="noopener">buka link hasil</a>' : '') + '</p>' +
+      (sudah ? '' : '<div class="row"><button type="button" class="btn primary grow" id="dbCepat">✓ Tandai selesai hari ini</button></div>') +
+      '<form id="dbForm"><div class="box"><h3>Edit video</h3>' +
+      pilih('dbv_ed', 'Editor video', awal.ed, gabung(P.edVideo, nmEd.sort()), '— belum ada editor —') +
       pilih('dbv_st', 'Status', awal.st, stOpsi, '— belum diisi —') +
       tanggal('dbv_ok', 'Tanggal selesai', awal.ok) +
-      '<label class="f" for="dbv_cat">Catatan / link hasil</label><input class="inp" id="dbv_cat" autocomplete="off" value="' + esc(awal.cat) + '">' +
-      '</div>' + tombolForm(baru ? 'Tambahkan' : 'Simpan') + '</form>');
+      teks('dbv_cat', 'Catatan / link hasil', awal.cat, 'mis. link Google Drive hasil edit') +
+      '</div>' + tombolForm('Simpan') + '</form>');
     pasangUmum();
-    wajib(baru ? ['dbv_jenis', 'dbv_sesi', 'dbv_pj'] : ['dbv_pj']);
+    if (stVideo(r) !== 'nanti') wajib(['dbv_ed']);
     $('dbv_st').onchange = function () { if (/^selesai$/i.test(this.value) && !$('dbv_ok').value) $('dbv_ok').value = hariIniISO(); };
     var kirim = function (ubah) {
-      if (baru) {
-        if (!ubah.jenis) { toast('Pilih jenis tugas.'); return; }
-        if (!ubah.sesi) { toast('Pilih sesi.'); return; }
-        if (sesiOpsi.length && sesiOpsi.indexOf(ubah.sesi) < 0) { toast('Sesi tidak ada di daftar. Pilih dari saran yang muncul.'); return; }
-        simpan({ action: 'dbTambahVideo', fields: ubah }, 'Tugas video ditambahkan', 'video');
-        return;
-      }
       if (!Object.keys(ubah).length) { tutup(); return; }
-      if (ubah.sesi != null && sesiOpsi.length && sesiOpsi.indexOf(ubah.sesi) < 0) { toast('Sesi tidak ada di daftar. Pilih dari saran yang muncul.'); return; }
-      simpan({ action: 'dbUbah', tab: 'video', row: r._row, sesi: g(r, 'Sesi'), fields: ubah },
+      simpan({ action: 'dbUbah', tab: 'video', row: r._src || '', kunci: { klien: g(r, 'Klien'), jenis: g(r, 'Jenis video'), tgl: g(r, 'Sesi terakhir') }, fields: ubah },
         ubah.st && /^selesai$/i.test(ubah.st) ? 'Ditandai selesai' + (ubah.ok ? ' ' + keDM(ubah.ok) : '') : 'Tersimpan ke spreadsheet', 'video');
     };
     if ($('dbCepat')) $('dbCepat').onclick = function () {
@@ -424,8 +427,8 @@
     };
     $('dbForm').onsubmit = function (ev) {
       ev.preventDefault();
-      var nilai = { jenis: $('dbv_jenis').value, sesi: $('dbv_sesi').value.replace(/\s+/g, ' ').trim(), pj: $('dbv_pj').value, st: $('dbv_st').value, ok: $('dbv_ok').value, cat: $('dbv_cat').value.trim() }, ubah = {};
-      Object.keys(nilai).forEach(function (k) { if (baru ? nilai[k] : nilai[k] !== awal[k]) ubah[k] = nilai[k]; });
+      var baru = { ed: $('dbv_ed').value, st: $('dbv_st').value, ok: $('dbv_ok').value, cat: $('dbv_cat').value.replace(/\s+/g, ' ').trim() }, ubah = {};
+      Object.keys(baru).forEach(function (k) { if (baru[k] !== awal[k]) ubah[k] = baru[k]; });
       kirim(ubah);
     };
   }
@@ -466,10 +469,8 @@
       var semua = ev.target.closest('[data-semua]');
       if (semua) { F[view].f = ''; tampilkan(view); return; }
       if (!bisaUbah() || ev.target.closest('a') || (view === 'event' && !bisaEvent())) return;
-      if (view === 'video' && ev.target.closest('[data-tambah]')) { bukaVideo(null); return; }
       var it = ev.target.closest('[data-i]'); if (!it) return;
       var r = LIST[view][+it.getAttribute('data-i')]; if (!r) return;
-      if (view === 'video' && !r._row) { toast('Muat ulang dulu (tombol ↻), lalu coba lagi.'); return; }
       ({ event: bukaEvent, foto: bukaFoto, video: bukaVideo })[view](r);
     };
   }
