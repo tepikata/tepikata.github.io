@@ -220,9 +220,9 @@
     var nTab = { proses: 0, antre: 0, kosong: 0, nanti: 0, selesai: 0, semua: 0 };
     rows.forEach(function (r) { if (!ed || g(r, 'Editor foto') === ed) { nTab[st(r)]++; nTab.semua++; if (kurangFoto(r)) nTab.kosong++; } });
     var f = F.foto.f;
-    if (!f || (f !== 'semua' && !nTab[f] && !q)) f = ['proses', 'antre', 'nanti', 'selesai'].find(function (k) { return nTab[k]; }) || 'semua';
+    if (!f || f === 'nanti' || (f !== 'semua' && !nTab[f] && !q)) f = ['proses', 'antre', 'kosong', 'selesai'].find(function (k) { return nTab[k]; }) || 'semua';
     F.foto.f = f;
-    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['kosong', 'Belum ada editor'], ['nanti', 'Belum sesi'], ['selesai', 'Selesai'], ['semua', 'Semua']];
+    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['kosong', 'Belum ada editor'], ['selesai', 'Selesai'], ['semua', 'Semua']];
     $('foTab').innerHTML = TAB.map(function (x) {
       var on = !q && f === x[0];
       return '<button type="button" role="tab" aria-selected="' + on + '" data-t="' + x[0] + '" class="' + (on ? 'on' : '') + (x[0] === 'kosong' && nTab.kosong ? ' merah' : '') + '">' + x[1] + ' <small>' + nTab[x[0]] + '</small></button>';
