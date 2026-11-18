@@ -269,6 +269,7 @@
     var telat = info(t, 'Terlambat') || String(rows.filter(function (r) { return /telat|terlambat|lewat/i.test(g(r, 'Keterangan')); }).length);
     var tanpaEd = rows.filter(kurangVideo).length;
     var bl = info(t, 'Bulan'), mb = bl.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);     // "01/11/2026" → "November 2026"
+    if (/^semua/i.test(bl)) bl = '';                                          // filter Bulan "Semua" → judul umum
     if (mb) bl = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][+mb[2] - 1] + ' ' + mb[3];
     hero('vi', 'Tugas edit video', bl ? judulBulan(bl) : 'Tugas <em>video</em>',
       '<b>' + rows.length + ' tugas edit video</b>. ' + c.antre + ' antre, ' + c.proses + ' dikerjakan, ' + c.selesai + ' selesai' +
@@ -312,7 +313,7 @@
       if (isi(g(r, 'Tgl selesai'))) meta.push('<span>Selesai ' + esc(g(r, 'Tgl selesai')) + '</span>');
       var ket = g(r, 'Keterangan'), sesi = g(r, 'Sesi yang masuk');
       h += kartu('<span class="dk-av">' + esc(inisial(g(r, 'Klien'))) + '</span><span class="main"><span class="nm">' + judulVideo(r) + '</span><span class="meta">' + meta.join('') + '</span>' +
-        (isi(sesi) ? '<span class="cat">' + esc(sesi) + '</span>' : '') + '</span>' +
+        (isi(sesi) && sesi.toLowerCase() !== g(r, 'Jenis video').toLowerCase() ? '<span class="cat">' + esc(sesi) + '</span>' : '') + '</span>' +
         (ket ? '<span class="pill ' + (s === 'selesai' ? 's2' : ketKelas(ket)) + '">' + esc(ket) + '</span>' : ''), (s === 'selesai' ? ' done' : '') + (kurangVideo(r) ? ' merah' : ''), i, bisaUbah() && (!D.cekBaris || !!r._src));
     });
     $('viList').innerHTML = (h || '<div class="empty">Tidak ada tugas video' + (q || f || ed ? ' yang cocok.' : '.') + '</div>') + kaki('video');
