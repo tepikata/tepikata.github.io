@@ -247,6 +247,10 @@
       '.alb button:focus-visible,.alb select:focus-visible,.alb input:focus-visible,.alb textarea:focus-visible{outline:2px solid var(--a-aksen);outline-offset:2px}',
       /* tampilan klien */
       '.alb-kl{position:fixed;inset:44px 0 0;overflow:auto;background:#F1EEEA;color:#2E1A24;font:15px/1.55 "Plus Jakarta Sans",system-ui,sans-serif;-webkit-overflow-scrolling:touch}',
+      '.alb-kl.mode-tab{inset:0;z-index:2147483000}',
+      '.alb-kl[hidden]{display:none!important}',
+      '.alb-kl .khd{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#2E1A24;color:#D9C9BE;font-size:13px}',
+      '.alb.alb-kl .khd .kembali{border:0;background:#F8F0E9;color:#2E1A24;border-radius:999px;padding:8px 14px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;min-height:40px}',
       '.alb-kl .wrap{max-width:760px;margin:0 auto;padding:22px 16px calc(120px + env(safe-area-inset-bottom,0px))}',
       '.alb-kl h2{font:400 clamp(32px,7vw,52px)/1 "Bodoni Moda",Georgia,serif;margin:6px 0 8px}',
       '.alb-kl .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#8a6a4a}',
@@ -505,41 +509,103 @@
   }
 
   /* ======================= KLIEN ======================= */
-  function Klien(k, onSiap) {
-    var D = null, box = null, tab = null, gal = null, catHal = {};
-    api({ action: 'albumKlien', k: k }).then(function (r) { if (!r || !r.ada) return; D = r; pasangTab(); if (onSiap) onSiap(r); }).catch(function () { });
-    function pasangTab() {
-      pasangGaya();
-      gal = document.querySelector('iframe');
-      tab = el('<nav class="alb-tab alb" aria-label="Galeri dan draf album"><button type="button" class="on" data-t="g">Galeri foto</button><button type="button" data-t="a">Draf album' + (D.status === ST.DIKIRIM ? '<span class="dot" aria-label="baru"></span>' : '') + '</button></nav>');
-      document.body.appendChild(tab);
-      document.body.classList.add('ada-album');
-      Array.prototype.forEach.call(tab.querySelectorAll('button'), function (b) { b.onclick = function () { pilih(b.dataset.t); }; });
-      if (/[#&]album\b/.test(location.hash)) pilih('a');
+  /* Tab "5 · Album" disisipkan ke deretan tab galeri klien (Index.html), di samping tab Video.
+     Muncul setelah klien mengirim pilihan album. Sebelum studio mengirim draf: susunan awal otomatis (hanya lihat).
+     Setelah studio mengirim draf: klien bisa memberi catatan per halaman, lalu Setujui / Minta revisi. */
+  function Klien(k, opsi) {
+    var D = null, box = null, tabEl = null;
+    api({ action: 'albumKlien', k: k }).then(function (r) {
+      if (!r || !r.ada) return;
+      D = r;
+      if (r.otomatis) {
+        if (!r.foto || !r.foto.length) return;
+        muatDimensi(r.foto.map(function (f) { return f.id; }), function (dim) { D.draf = drafBaru(r.foto, dim); siap(); });
+      } else siap();
+    }).catch(function () { });
+    function siap() { pasangGaya(); tungguTab(0); }
+
+    /* cari deretan tab galeri: elemen yang memuat teks "Pilih untuk Album" + saudara "Video"/"Kenangan" */
+    function cariTab() {
+      var semua = document.querySelectorAll('button, a, [role=tab], li');
+      var vid = null, ken = null, alb = null;
+      Array.prototype.forEach.call(semua, function (e) {
+        if (e.closest('.alb')) return;
+        var t = (e.textContent || '').replace(/\s+/g, ' ').trim();
+        if (t.length > 60) return;
+        if (!vid && /\bVideo\b/i.test(t) && /^\d?\s*Video/i.test(t)) vid = e;
+        if (!ken && /Kenangan/i.test(t)) ken = e;
+        if (!alb && /Pilih untuk Album/i.test(t)) alb = e;
+      });
+      var acuan = vid || ken || alb;
+      if (!acuan || !acuan.parentNode) return null;
+      return { acuan: acuan, induk: acuan.parentNode, nomor: vid ? '5' : ken ? '4' : '3' };
     }
-    function pilih(t) {
-      Array.prototype.forEach.call(tab.querySelectorAll('button'), function (b) { b.classList.toggle('on', b.dataset.t === t); b.setAttribute('aria-pressed', b.dataset.t === t); });
-      if (t === 'a') { if (!box) gambar(); box.hidden = false; if (gal) gal.inert = true; }
-      else { if (box) box.hidden = true; if (gal) gal.inert = false; }
+    function tungguTab(n) {
+      var t = cariTab();
+      if (t) return pasangTab(t);
+      if (n > 120) return;                       // ±60 detik: galeri besar butuh waktu dimuat
+      setTimeout(function () { tungguTab(n + 1); }, 500);
     }
+    function pasangTab(t) {
+      if (document.querySelector('[data-alb-tab]')) return;
+      tabEl = t.acuan.cloneNode(true);
+      tabEl.setAttribute('data-alb-tab', '1');
+      tabEl.removeAttribute('id'); tabEl.removeAttribute('aria-selected'); tabEl.removeAttribute('aria-current');
+      Array.prototype.forEach.call(tabEl.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
+      // ganti teks: nomor → 5, judul → Album, keterangan → jumlah halaman
+      var w = document.createTreeWalker(tabEl, NodeFilter.SHOW_TEXT), node, teks = [];
+      while ((node = w.nextNode())) if (node.nodeValue.trim()) teks.push(node);
+      var judulKe = -1;
+      teks.forEach(function (n, i) {
+        var v = n.nodeValue.trim();
+        if (/^\d+$/.test(v) && judulKe < 0) n.nodeValue = n.nodeValue.replace(v, t.nomor);
+        else if (judulKe < 0) { n.nodeValue = n.nodeValue.replace(v, 'Album'); judulKe = i; }
+        else n.nodeValue = n.nodeValue.replace(v, keteranganTab());
+      });
+      if (teks.length && judulKe === teks.length - 1) teks[judulKe].parentNode.appendChild(document.createTextNode(''));
+      // hapus kelas "aktif" bila tab acuan kebetulan sedang aktif
+      ['on', 'active', 'aktif', 'sel', 'selected', 'is-active', 'current'].forEach(function (c) { tabEl.classList.remove(c); });
+      if (tabEl.tagName === 'A') tabEl.removeAttribute('href');
+      tabEl.onclick = function (e) { e.preventDefault(); e.stopPropagation(); buka(); };
+      t.acuan.parentNode.insertBefore(tabEl, t.acuan.nextSibling);
+      if (/[#&]album\b/.test(location.hash)) buka();
+    }
+    function keteranganTab() {
+      if (D.otomatis) return D.draf.halaman.length + ' halaman · draf awal';
+      if (D.status === ST.SETUJU) return '✓ Disetujui';
+      if (D.status === ST.REVISI) return 'Revisi dikirim';
+      return 'Menunggu persetujuan';
+    }
+    function buka() {
+      if (!box) gambar();
+      box.hidden = false; document.documentElement.style.overflow = 'hidden';
+      box.scrollTop = 0; var b = box.querySelector('[data-tutup]'); if (b) b.focus();
+    }
+    function tutup() { if (box) box.hidden = true; document.documentElement.style.overflow = ''; if (tabEl) tabEl.focus(); }
     function gambar() {
-      var d = D.draf, setuju = D.status === ST.SETUJU, revisi = D.status === ST.REVISI;
-      if (!box) { box = el('<section class="alb-kl alb" aria-label="Draf album"></section>'); document.body.appendChild(box); }
-      var info = setuju ? '<div class="info" style="border-color:#bfe3c9;background:#eef8f1">✓ Anda sudah menyetujui album ini. Studio akan mengirimnya ke percetakan.</div>' :
+      var d = D.draf, setuju = D.status === ST.SETUJU, revisi = D.status === ST.REVISI, lihat = D.otomatis || setuju || revisi;
+      if (!box) {
+        box = el('<section class="alb-kl alb mode-tab" role="dialog" aria-modal="true" aria-label="Album"></section>');
+        document.body.appendChild(box);
+        box.addEventListener('keydown', function (e) { if (e.key === 'Escape') tutup(); });
+      }
+      var info = D.otomatis ? '<div class="info">Ini <b>susunan awal otomatis</b> dari ' + D.foto.length + ' foto pilihan album Anda. Studio akan merapikannya, lalu mengirim versi final ke tab ini untuk Anda setujui.</div>' :
+        setuju ? '<div class="info" style="border-color:#bfe3c9;background:#eef8f1">✓ Anda sudah menyetujui album ini. Studio akan mengirimnya ke percetakan.</div>' :
         revisi ? '<div class="info" style="border-color:#f1c9c5;background:#fdf1f0">Permintaan revisi Anda sudah terkirim. Studio akan memperbarui draf ini, lalu Anda bisa melihatnya lagi di sini.</div>' : '';
-      box.innerHTML = '<div class="wrap"><div class="eyebrow">Draf album</div><h2>' + esc(D.nama) + '</h2>' +
-        '<p class="lead">' + d.halaman.length + ' halaman · ' + d.ukuran.w + '×' + d.ukuran.h + ' cm. Lihat setiap halaman. Jika ada yang ingin diubah, ketuk <b>Catatan</b> di halaman itu, lalu kirim <b>Minta revisi</b>. Jika sudah pas, tekan <b>Setujui album</b>.</p>' + info +
+      box.innerHTML = '<div class="khd"><button type="button" class="kembali" data-tutup>← Kembali ke galeri</button><span>Album · ' + d.ukuran.w + '×' + d.ukuran.h + ' cm</span></div>' +
+        '<div class="wrap"><div class="eyebrow">' + (D.otomatis ? 'Draf awal album' : 'Draf album') + '</div><h2>' + esc(D.nama) + '</h2>' +
+        '<p class="lead">' + d.halaman.length + ' halaman. ' + (lihat ? 'Gulir untuk melihat setiap halaman.' : 'Lihat setiap halaman. Jika ada yang ingin diubah, ketuk <b>Catatan</b> di halaman itu, lalu kirim <b>Minta revisi</b>. Jika sudah pas, tekan <b>Setujui album</b>.') + '</p>' + info +
         '<div data-hal></div></div>' +
-        (setuju || revisi ? '' : '<div class="kbar"><div class="in"><button type="button" data-k="revisi">Minta revisi</button><button type="button" class="utama" data-k="setuju">Setujui album</button></div><div class="err" data-err style="text-align:center"></div></div>');
+        (lihat ? '' : '<div class="kbar"><div class="in"><button type="button" data-k="revisi">Minta revisi</button><button type="button" class="utama" data-k="setuju">Setujui album</button></div><div class="err" data-err style="text-align:center"></div></div>');
       var wrap = box.querySelector('[data-hal]');
       d.halaman.forEach(function (hal, i) {
-        var kep = el('<div class="nohal"><span>Halaman ' + (i + 1) + ' dari ' + d.halaman.length + '</span>' + (setuju || revisi ? '' : '<button type="button" class="ctt" data-c="' + i + '">Catatan</button>') + '</div>');
-        wrap.appendChild(kep);
+        wrap.appendChild(el('<div class="nohal"><span>Halaman ' + (i + 1) + ' dari ' + d.halaman.length + '</span>' + (lihat ? '' : '<button type="button" class="ctt" data-c="' + i + '">Catatan</button>') + '</div>'));
         wrap.appendChild(halamanEl(d, hal, { res: 1200 }));
-        if (!setuju && !revisi) wrap.appendChild(el('<div data-ct="' + i + '" hidden><textarea aria-label="Catatan halaman ' + (i + 1) + '" placeholder="Contoh: ganti foto kanan atas, atau pindahkan ke halaman awal"></textarea></div>'));
+        if (!lihat) wrap.appendChild(el('<div data-ct="' + i + '" hidden><textarea aria-label="Catatan halaman ' + (i + 1) + '" placeholder="Contoh: ganti foto kanan atas, atau pindahkan ke halaman awal"></textarea></div>'));
       });
       box.onclick = function (e) {
         var b = e.target.closest('button'); if (!b) return;
+        if (b.hasAttribute('data-tutup')) return tutup();
         if (b.dataset.c != null) { var c = box.querySelector('[data-ct="' + b.dataset.c + '"]'); c.hidden = !c.hidden; if (!c.hidden) c.querySelector('textarea').focus(); return; }
         if (b.dataset.k) kirim(b.dataset.k);
       };
@@ -557,7 +623,10 @@
       var bs = box.querySelectorAll('.kbar button'); Array.prototype.forEach.call(bs, function (x) { x.disabled = true; });
       err.textContent = 'Mengirim…';
       api({ action: 'albumKlienKirim', k: k, keputusan: kep, catatan: cat.join('\n') })
-        .then(function (r) { D.status = r.status; D.catatan = r.catatan; var dot = tab.querySelector('.dot'); if (dot) dot.remove(); gambar(); box.scrollTop = 0; })
+        .then(function (r) {
+          D.status = r.status; D.catatan = r.catatan; gambar(); box.scrollTop = 0;
+          if (tabEl) { var w = document.createTreeWalker(tabEl, NodeFilter.SHOW_TEXT), n, x = []; while ((n = w.nextNode())) if (n.nodeValue.trim()) x.push(n); if (x.length > 2) x[x.length - 1].nodeValue = keteranganTab(); }
+        })
         .catch(function (e) { err.textContent = e.message; Array.prototype.forEach.call(bs, function (x) { x.disabled = false; }); });
     }
   }
@@ -565,6 +634,6 @@
   window.AlbumTepi = {
     LAY: LAY, kotak: kotak, susunOtomatis: susunOtomatis, pxCetak: pxCetak, gambarHalaman: gambarHalaman,
     studio: function (root, opsi) { APP = opsi.app; pasangGaya(); return Studio(root, opsi.kunci, opsi.toast); },
-    klien: function (opsi) { APP = opsi.app; if (opsi.k) Klien(opsi.k, opsi.siap); },
+    klien: function (opsi) { APP = opsi.app; if (opsi.k) Klien(opsi.k, opsi); },
   };
 })();

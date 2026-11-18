@@ -132,12 +132,6 @@
       setTimeout(function () { f.className = 'ok'; $('tirai').className = 'tirai pergi'; clearInterval(tPesan); clearInterval(tMaju); }, 350);
     };
     document.body.appendChild(f);
-
-    // Tab "Draf album": muncul bila studio sudah mengirim draf halaman album (album/album.js, server Album.gs)
-    var sa = document.createElement('script');
-    sa.src = '/album/album.js';
-    sa.onload = function () { if (window.AlbumTepi) AlbumTepi.klien({ app: APP, k: slug }); };
-    document.body.appendChild(sa);
   }
 </script>
 </body>
