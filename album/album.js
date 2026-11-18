@@ -19,7 +19,7 @@
     '6':  { n: 6, C: 3, R: 2, s: [[0, 0, 1, 1], [1, 0, 1, 1], [2, 0, 1, 1], [0, 1, 1, 1], [1, 1, 1, 1], [2, 1, 1, 1]], t: 'Kotak 3×2' },
   };
   var BAWAAN = { 1: '1', 2: '2v', 3: '3a', 4: '4', 5: '5', 6: '6' };
-  var UKURAN = [['30×30 cm', 30, 30], ['25×25 cm', 25, 25], ['20×20 cm', 20, 20], ['30×20 cm (lanskap)', 30, 20], ['20×30 cm (potret)', 20, 30], ['40×30 cm', 40, 30], ['60×30 cm (bentang)', 60, 30]];
+  var UKURAN = [['25×30 cm (potret)', 25, 30], ['30×25 cm (lanskap)', 30, 25], ['30×30 cm', 30, 30], ['25×25 cm', 25, 25], ['20×20 cm', 20, 20], ['30×20 cm (lanskap)', 30, 20], ['40×30 cm', 40, 30], ['60×30 cm (bentang)', 60, 30]];
   var LATAR = [['#ffffff', 'Putih'], ['#f4efe8', 'Krem'], ['#1f1c19', 'Hitam']];
   var ST = { DRAF: 'DRAF', DIKIRIM: 'DIKIRIM KE KLIEN', REVISI: 'KLIEN MINTA REVISI', SETUJU: 'DISETUJUI KLIEN' };
 
@@ -91,7 +91,7 @@
     return hal;
   }
   function drafBaru(foto, dim) {
-    return { v: 1, ukuran: { w: 30, h: 30 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
+    return { v: 1, ukuran: { w: 25, h: 30 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
   }
   function muatDimensi(ids, selesai) {
     var dim = {}, sisa = ids.length;
@@ -299,14 +299,17 @@
     }
     function gambarDaftar() {
       var q = (X.q || '').toLowerCase();
-      var l = X.daftar.filter(function (k) { return !q || (k.nama + ' ' + k.bulan).toLowerCase().indexOf(q) >= 0; });
-      root.innerHTML = '<p class="note" style="margin:4px 0 12px">Draf halaman album disusun otomatis dari foto pilihan album klien. Atur sesukanya, kirim ke klien untuk disetujui, lalu unduh JPG untuk percetakan.</p>' +
+      var siap = X.daftar.filter(function (k) { return k.statusPilih === 'SELESAI' || k.draf; });
+      var nunggu = X.daftar.length - siap.length;
+      var l = siap.filter(function (k) { return !q || (k.nama + ' ' + k.bulan).toLowerCase().indexOf(q) >= 0; });
+      root.innerHTML = '<p class="note" style="margin:4px 0 12px">Klien muncul di sini setelah mengirim pilihan foto album (maks. 120 foto). Halaman album disusun otomatis dari pilihannya. Atur sesukanya, kirim ke klien untuk disetujui, lalu unduh JPG untuk percetakan.</p>' +
         '<input class="search" type="search" placeholder="Cari klien…" value="' + esc(X.q || '') + '" data-q>' +
         '<div class="alb-daftar">' + (l.map(function (k, i) {
           var dr = k.draf;
           return '<button type="button" data-i="' + X.daftar.indexOf(k) + '"><span class="main"><span class="nm">' + esc(k.nama) + '</span><span class="mt">' + esc(k.bulan) + ' · ' + k.jumlah + ' foto album' +
-            (k.statusPilih === 'SELESAI' ? ' (sudah dikirim klien)' : ' (klien masih memilih)') + (dr && dr.hal ? ' · ' + dr.hal + ' halaman · ' + esc(dr.waktu) : '') + '</span></span>' + pillStatus(dr && dr.status) + '</button>';
-        }).join('') || '<div class="alb-kosong">' + (q ? 'Tidak ada klien yang cocok.' : 'Belum ada klien yang memilih foto album.') + '</div>') + '</div>';
+            (k.statusPilih === 'SELESAI' ? '' : ' (pilihan dibuka lagi)') + (dr && dr.hal ? ' · ' + dr.hal + ' halaman · ' + esc(dr.waktu) : '') + '</span></span>' + pillStatus(dr && dr.status) + '</button>';
+        }).join('') || '<div class="alb-kosong">' + (q ? 'Tidak ada klien yang cocok.' : 'Belum ada klien yang selesai memilih foto album.') + '</div>') + '</div>' +
+        (nunggu ? '<p class="note" style="text-align:center;margin:8px 0 0">' + nunggu + ' klien lain masih memilih foto album. Mereka muncul di sini setelah mengirim pilihannya.</p>' : '');
       var inp = root.querySelector('[data-q]');
       inp.oninput = function () { X.q = inp.value; var pos = inp.selectionStart; gambarDaftar(); var n = root.querySelector('[data-q]'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) { } };
       Array.prototype.forEach.call(root.querySelectorAll('.alb .alb-daftar button[data-i]'), function (b) { b.onclick = function () { buka(X.daftar[+b.dataset.i].kode); }; });
