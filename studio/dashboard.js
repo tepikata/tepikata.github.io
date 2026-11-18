@@ -215,7 +215,22 @@
     ringkas('foSum', [['antre', c.antre, 'Antre'], ['proses', c.proses, 'Dikerjakan · ' + telat + ' terlambat', +telat > 0], ['selesai', c.selesai, 'Selesai']], 'foto');
     var editors = []; rows.forEach(function (r) { var e = g(r, 'Editor foto'); if (isi(e) && editors.indexOf(e) < 0) editors.push(e); });
     chips('foEd', 'Editor', editors.sort(), F.foto.ed, 'foto', 'ed');
-    var q = F.foto.q, f = F.foto.f, ed = F.foto.ed;
+    var q = F.foto.q, ed = F.foto.ed;
+    // Tombol tab status: hanya satu kelompok tampil sekaligus, supaya daftar tidak terlalu panjang.
+    var nTab = { proses: 0, antre: 0, nanti: 0, selesai: 0, semua: 0 };
+    rows.forEach(function (r) { if (!ed || g(r, 'Editor foto') === ed) { nTab[st(r)]++; nTab.semua++; } });
+    var f = F.foto.f;
+    if (!f || (f !== 'semua' && !nTab[f] && !q)) f = ['proses', 'antre', 'nanti', 'selesai'].find(function (k) { return nTab[k]; }) || 'semua';
+    F.foto.f = f;
+    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['nanti', 'Belum sesi'], ['selesai', 'Selesai'], ['semua', 'Semua']];
+    $('foTab').innerHTML = TAB.map(function (x) {
+      var on = !q && f === x[0];
+      return '<button type="button" role="tab" aria-selected="' + on + '" data-t="' + x[0] + '" class="' + (on ? 'on' : '') + '">' + x[1] + ' <small>' + nTab[x[0]] + '</small></button>';
+    }).join('');
+    Array.prototype.forEach.call($('foTab').children, function (bt) {
+      bt.onclick = function () { F.foto.f = bt.getAttribute('data-t'); if (F.foto.q) { F.foto.q = ''; $('foQ').value = ''; } tampilkan('foto'); };
+    });
+    if (q || f === 'semua') f = '';                     // pencarian selalu mencari di semua status
     var urut = { antre: 1, proses: 0, selesai: 2, nanti: 3 };
     var list = rows.filter(function (r) { return (!f || st(r) === f) && (!ed || g(r, 'Editor foto') === ed) && cocok(q, [g(r, 'Event'), g(r, 'Sesi'), g(r, 'Editor foto'), g(r, 'FG 1')].join(' ')); });
     list = list.map(function (r, i) { return [r, i]; }).sort(function (a, b) { return (urut[st(a[0])] - urut[st(b[0])]) || a[1] - b[1]; }).map(function (x) { return x[0]; });

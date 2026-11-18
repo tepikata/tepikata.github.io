@@ -158,6 +158,14 @@
   .tls .chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;min-height:36px}
   .tls .chips button.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .tls .item .pill{max-width:46%;white-space:normal;text-align:center}
+  .tls .segtab{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px 12px;padding:2px 16px;position:sticky;top:0;z-index:5;background:var(--bg)}
+  .tls .segtab::-webkit-scrollbar{display:none}
+  .tls .segtab:empty{display:none}
+  .tls .segtab button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;min-height:40px;color:var(--ink)}
+  .tls .segtab button small{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
+  .tls .segtab button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .tls .segtab button.on small{color:rgba(255,255,255,.7)}
+  .tls .segtab button:focus-visible{outline:2px solid var(--aksen);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -237,6 +245,7 @@
     <div class="sum" id="foSum"></div>
     <div class="chips" id="foEd"></div>
     <input id="foQ" class="search" type="search" placeholder="Cari klien, sesi, atau nama tim…" autocomplete="off">
+    <div class="segtab" id="foTab" role="tablist" aria-label="Status tugas foto"></div>
     <div class="list" id="foList"></div>
   </main>
 </div>
