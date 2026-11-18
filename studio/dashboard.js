@@ -178,11 +178,32 @@
     return /telat|terlambat|lewat/.test(k) ? 's3' : /tepat/.test(k) ? 's2' : /segera/.test(k) ? 's1' : 's0';
   }
   function stFoto(r) { var s = g(r, 'Status foto').toLowerCase(), k = g(r, 'Keterangan').toLowerCase(); return s === 'selesai' ? 'selesai' : /belum sesi/.test(k) ? 'nanti' : s === 'dikerjakan' ? 'proses' : 'antre'; }
+  /* Klien di Upcoming yang belum ada di tab TUGAS FOTO ikut ditampilkan, supaya editor tinggal mengisi nama.
+     Kartu ini memakai baris EVENT DATA yang sama (_src), jadi tersimpan lewat "dbUbah" seperti kartu lain. */
+  function kunciSesi(tgl, ev, sesi) {
+    var m = String(tgl || '').match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+    return (m ? +m[1] + '/' + +m[2] : '') + '|' + String(ev || '').replace(/^\W+\s*/, '').trim().toLowerCase() + '|' + String(sesi || '').trim().toLowerCase();
+  }
+  function dariUpcoming(rows) {
+    if (!D.event || !D.event.ada) return rows;
+    var ada = {};
+    rows.forEach(function (r) { ada[kunciSesi(g(r, 'Tanggal sesi'), g(r, 'Event'), g(r, 'Sesi'))] = 1; });
+    var tambah = [];
+    D.event.baris.forEach(function (e) {
+      if (!(isi(g(e, 'Event')) || isi(g(e, 'Sesi'))) || /internal/i.test(g(e, 'Event')) || /batal/i.test(g(e, 'Status'))) return;
+      var k = kunciSesi(g(e, 'Tanggal'), g(e, 'Event'), g(e, 'Sesi'));
+      if (ada[k]) return; ada[k] = 1;
+      var lewat = /selesai/i.test(g(e, 'Status'));
+      tambah.push({ 'Tanggal sesi': g(e, 'Tanggal'), 'Sesi': g(e, 'Sesi'), 'Event': g(e, 'Event'), 'FG 1': g(e, 'FG 1'),
+        'Editor foto': g(e, 'Editor foto'), 'Status foto': g(e, 'Status foto'), 'Keterangan': lewat ? '' : 'Belum sesi', _src: e._src, _upcoming: 1 });
+    });
+    return rows.concat(tambah);
+  }
   function viewFoto() {
     var t = D.foto;
     if (!t.ada) return kosong('foList', 'Tab TUGAS FOTO tidak ditemukan di spreadsheet.', 'foto');
     $('foBulan').innerHTML = bulanLabel(t);
-    var rows = t.baris.filter(function (r) { return isi(g(r, 'Event')) || isi(g(r, 'Sesi')); });
+    var rows = dariUpcoming(t.baris.filter(function (r) { return isi(g(r, 'Event')) || isi(g(r, 'Sesi')); }));
     var st = stFoto;
     var c = { antre: 0, proses: 0, selesai: 0 }; rows.forEach(function (r) { if (c[st(r)] != null) c[st(r)]++; });
     var telat = info(t, 'Terlambat') || '0', nanti = rows.length - c.antre - c.proses - c.selesai, tanpaEd = rows.filter(kurangFoto).length;
