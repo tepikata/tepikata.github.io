@@ -625,7 +625,26 @@
       if (tabEl.tagName === 'A') tabEl.removeAttribute('href');
       tabEl.onclick = function (e) { e.preventDefault(); e.stopPropagation(); buka(); };
       t.acuan.parentNode.insertBefore(tabEl, t.acuan.nextSibling);
+      rapikan(0);
       if (/[#&]album\b/.test(location.hash)) buka();
+    }
+    /* Tab Video bisa baru tampil belakangan (video dimuat lambat): pindahkan Album ke paling kanan
+       dan nomori ulang tab yang terlihat (1, 2, 3, …) supaya urutan tetap … · Video · Album */
+    function rapikan(n) {
+      if (!tabEl || !tabEl.parentNode) return;
+      var induk = tabEl.parentNode;
+      var kids = Array.prototype.filter.call(induk.children, function (e) { return e !== tabEl && !e.closest('.alb'); });
+      var akhir = null;
+      kids.forEach(function (e) { if (tampil(e)) akhir = e; });
+      if (akhir && akhir.compareDocumentPosition(tabEl) & Node.DOCUMENT_POSITION_PRECEDING) induk.insertBefore(tabEl, akhir.nextSibling);
+      var no = 0;
+      Array.prototype.forEach.call(induk.children, function (e) {
+        if (e !== tabEl && !tampil(e)) return;
+        no++;
+        var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), x;
+        while ((x = w.nextNode())) { var v = x.nodeValue.trim(); if (v) { if (/^\d+$/.test(v) && v !== String(no)) x.nodeValue = x.nodeValue.replace(v, String(no)); break; } }
+      });
+      if (n < 90) setTimeout(function () { rapikan(n + 1); }, 1000);   // pantau ±90 detik
     }
     function keteranganTab() {
       if (D.otomatis) return D.draf.halaman.length + ' halaman · draf awal';
