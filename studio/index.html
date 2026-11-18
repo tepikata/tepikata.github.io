@@ -265,16 +265,19 @@
     <div class="list" id="viList"></div>
   </main>
 </div>
+<div class="tl tls hidden" id="alView" role="region" aria-label="Draf album"><header><div class="wrap hd" id="alHd"></div></header><main class="wrap" id="alMain"></main></div>
 <nav class="tabbar hidden" id="tabbar" aria-label="Menu Studio">
   <button type="button" data-tab="klien" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.2c2.2.2 3.9 1.8 4.4 4.8"/></svg>Data Klien</button>
   <button type="button" data-tab="baru" class="tab-baru"><span class="plusbtn" aria-hidden="true">＋</span>Klien Baru</button>
   <button type="button" data-tab="event"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5l1.5 1.5 3-3"/></svg>Upcoming</button>
   <button type="button" data-tab="foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg>Tugas Foto</button>
   <button type="button" data-tab="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>Tugas Video</button>
+  <button type="button" data-tab="album"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M13 4h5.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H13z"/><path d="M6.5 8h2M15.5 8h2"/></svg>Album</button>
 </nav>
 <div class="pasang hidden" id="pasang"><span>Pasang sebagai aplikasi: tekan <b>Bagikan</b>, lalu <b>Tambah ke Layar Utama</b>.</span><button type="button" id="tutup">Tutup</button></div>
 <script src="tasklist.js"></script>
 <script src="dashboard.js"></script>
+<script src="../album/album.js"></script>
 <script>
   // Aplikasi Studio Tepi Kata. Kunci admin disimpan di bagian # link (tidak pernah terkirim ke server GitHub).
   var APP = 'https://script.google.com/macros/s/AKfycbw-JPq01HTHxvZ8WKSyY6nR40I8wEwPrNfW8CS8fhjV1-ELpqUAQYsTbr8T_tA6gzg/exec';
@@ -294,24 +297,39 @@
     pasangTab();
   }
   // Tab Klien / Tasklist (muncul setelah masuk Studio)
+  // Tab Album: draf halaman album dari foto pilihan klien (album/album.js, server Album.gs)
+  var AlbumTab = {
+    s: null,
+    init: function () {
+      var hd = document.querySelector('#viView header .hd');
+      document.getElementById('alHd').innerHTML = hd ? hd.innerHTML.replace(/Tugas Video/g, 'Draf Album').replace(/id="viRefresh"/, 'id="alRefresh"') : '';
+      var r = document.getElementById('alRefresh'); if (r) r.onclick = function () { if (AlbumTab.s) AlbumTab.s.muatUlang(); };
+    },
+    tampil: function () {
+      if (!window.AlbumTepi) return;
+      if (!this.s) this.s = AlbumTepi.studio(document.getElementById('alMain'), { app: APP, kunci: ambil(), toast: function (m) { var t = document.getElementById('alToast'); if (!t) { t = document.createElement('div'); t.id = 'alToast'; t.className = 'tls toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); } t.textContent = m; t.classList.add('show'); clearTimeout(AlbumTab.tt); AlbumTab.tt = setTimeout(function () { t.classList.remove('show'); }, 2800); } });
+      this.s.tampil();
+    }
+  };
   function pilihTab(t) {
-    var V = { event: 'evView', foto: 'foView', video: 'viView', baru: 'kbView' };
+    var V = { event: 'evView', foto: 'foView', video: 'viView', baru: 'kbView', album: 'alView' };
     document.getElementById('tlView').classList.add('hidden');
     Object.keys(V).forEach(function (k) { document.getElementById(V[k]).classList.toggle('hidden', k !== t); });
     var fr = document.querySelector('iframe'); if (fr) fr.inert = t !== 'klien';
     if (t === 'baru') KlienBaru.tampil();
     Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); });
     if (t === 'event' || t === 'foto' || t === 'video') DashboardTab.tampil(t);
+    if (t === 'album') AlbumTab.tampil();
     try { localStorage.setItem('studioTab', t); } catch (e) { }
   }
   function pasangTab() {
     if (!window.TasklistTab || document.body.classList.contains('tabs')) return;
-    TasklistTab.init(); KlienBaru.init(); DashboardTab.init();
+    TasklistTab.init(); KlienBaru.init(); DashboardTab.init(); AlbumTab.init();
     document.body.classList.add('tabs');
     document.getElementById('tabbar').classList.remove('hidden');
     Array.prototype.forEach.call(document.querySelectorAll('#tabbar button'), function (b) { b.onclick = function () { pilihTab(b.getAttribute('data-tab')); }; });
     var t = 'klien'; try { t = localStorage.getItem('studioTab') || 'klien'; } catch (e) { }
-    if (['event', 'baru', 'foto', 'video'].indexOf(t) < 0) t = 'klien';
+    if (['event', 'baru', 'foto', 'video', 'album'].indexOf(t) < 0) t = 'klien';
     pilihTab(t);
   }
   var kunci = bersih(location.hash) || ambil();
