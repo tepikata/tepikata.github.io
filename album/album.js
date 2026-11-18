@@ -73,25 +73,69 @@
 
   /* ---------- susun otomatis ---------- */
   function orientasi(dim, id) { var o = dim[id]; return !o ? 'l' : (o.h > o.w * 1.05 ? 'p' : 'l'); }
+  // Album standar: 10 lembar = 20 halaman, maks. 6 foto per halaman (20 × 6 = 120 = batas pilihan album)
+  var JML_HAL = 20, MAKS_FOTO = 6;
+  // Bagi n foto ke p halaman: rata, tapi halaman pertama tiap sesi dibuat 1 foto (pembuka) bila muat
+  function bagiRata(n, p) {
+    var c = [], i;
+    for (i = 0; i < p; i++) c.push(Math.floor(n / p) + (i < n % p ? 1 : 0));
+    if (p >= 2 && c[0] > 1) {
+      var lebih = c[0] - 1, muat = 0;
+      for (i = 1; i < p; i++) muat += MAKS_FOTO - c[i];
+      if (muat >= lebih) {
+        c[0] = 1;
+        for (i = 1; lebih > 0; i = i % (p - 1) + 1) if (c[i] < MAKS_FOTO) { c[i]++; lebih--; }
+      }
+    }
+    return c;
+  }
+  // Bagi p halaman ke beberapa sesi sebanding jumlah fotonya (sisa terbesar), tiap sesi min. 1 halaman
+  function bagiHalaman(jml, p) {
+    var tot = jml.reduce(function (a, b) { return a + b; }, 0);
+    var h = jml.map(function (n) { return Math.max(1, Math.ceil(n / MAKS_FOTO), Math.floor(n / tot * p)); });
+    var sisa = function () { return p - h.reduce(function (a, b) { return a + b; }, 0); };
+    var urut = jml.map(function (n, i) { return i; }).sort(function (a, b) { return (jml[b] / tot * p - h[b]) - (jml[a] / tot * p - h[a]); });
+    for (var k = 0; sisa() > 0 && k < 1000; k++) { var i = urut[k % urut.length]; if (h[i] < jml[i]) h[i]++; }
+    // kelebihan halaman (karena minimum per sesi): kurangi dari sesi yang paling longgar
+    for (k = 0; sisa() < 0 && k < 1000; k++) {
+      var j = -1;
+      h.forEach(function (x, i) { if (x > Math.max(1, Math.ceil(jml[i] / MAKS_FOTO)) && (j < 0 || jml[i] / x < jml[j] / h[j])) j = i; });
+      if (j < 0) break; h[j]--;
+    }
+    return h;
+  }
+  function pilihLay(o) {
+    var n = o.length, semua = function (x) { return o.every(function (y) { return y === x; }); };
+    if (n === 1) return o[0] === 'l' ? '1f' : '1';
+    if (n === 2) return semua('l') ? '2h' : '2v';
+    if (n === 3) return o[0] === 'p' ? '3a' : (o[1] === 'p' && o[2] === 'p' ? '3b' : '3c');
+    if (n === 4) return semua('p') ? '4' : '4b';
+    return n === 5 ? '5' : '6';
+  }
   function susunOtomatis(foto, dim) {
     var hal = [], grup = [], last = null;
+    if (!foto.length) return hal;
     foto.forEach(function (f) { if (f.g !== last) { grup.push([]); last = f.g; } grup[grup.length - 1].push(f); });
-    grup.forEach(function (q) {
-      q = q.slice(); var ke = 0;
-      var tambah = function (lay, n) { hal.push({ lay: lay, sesi: q[0].g, foto: q.splice(0, n).map(function (f) { return { id: f.id, x: 50, y: 50, z: 1 }; }) }); ke++; };
-      while (q.length) {
-        var o = q.slice(0, 4).map(function (f) { return orientasi(dim, f.id); });
-        if (ke === 0 || q.length === 1) { tambah(o[0] === 'l' && ke === 0 ? '1f' : '1', 1); continue; }
-        if (ke % 3 === 2 && q.length >= 4 && o.every(function (x) { return x === o[0]; })) { tambah(o[0] === 'p' ? '4' : '4b', 4); continue; }
-        if (o[0] === o[1] && (q.length === 2 || o[2] !== o[0] || ke % 2)) { tambah(o[0] === 'p' ? '2v' : '2h', 2); continue; }
-        if (q.length >= 3) { tambah(o[0] === 'p' ? '3a' : (o[1] === 'p' && o[2] === 'p' ? '3b' : '3c'), 3); continue; }
-        tambah('2v', 2);
-      }
+    var p = Math.max(Math.min(JML_HAL, foto.length), Math.ceil(foto.length / MAKS_FOTO));
+    // Sesi terlalu banyak untuk 20 halaman: susun sebagai satu urutan
+    // Sesi tidak muat dibagi rapi ke 20 halaman (terlalu banyak / maks. 6 foto per halaman): susun sebagai satu urutan
+    var minHal = grup.reduce(function (a, q) { return a + Math.max(1, Math.ceil(q.length / MAKS_FOTO)); }, 0);
+    if (minHal > p) grup = [foto.slice()];
+    var hp = bagiHalaman(grup.map(function (q) { return q.length; }), p);
+    grup.forEach(function (q, gi) {
+      q = q.slice();
+      bagiRata(q.length, hp[gi]).forEach(function (n) {
+        if (!n) return;
+        var isi = q.splice(0, n);
+        hal.push({ lay: pilihLay(isi.map(function (f) { return orientasi(dim, f.id); })), sesi: isi[0].g,
+          foto: isi.map(function (f) { return { id: f.id, x: 50, y: 50, z: 1 }; }) });
+      });
     });
     return hal;
   }
   function drafBaru(foto, dim) {
-    return { v: 1, ukuran: { w: 25, h: 30 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
+    // Bawaan: lanskap 30×25 cm
+    return { v: 1, ukuran: { w: 30, h: 25 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
   }
   function muatDimensi(ids, selesai) {
     var dim = {}, sisa = ids.length;
