@@ -217,22 +217,22 @@
     chips('foEd', 'Editor', editors.sort(), F.foto.ed, 'foto', 'ed');
     var q = F.foto.q, ed = F.foto.ed;
     // Tombol tab status: hanya satu kelompok tampil sekaligus, supaya daftar tidak terlalu panjang.
-    var nTab = { proses: 0, antre: 0, nanti: 0, selesai: 0, semua: 0 };
-    rows.forEach(function (r) { if (!ed || g(r, 'Editor foto') === ed) { nTab[st(r)]++; nTab.semua++; } });
+    var nTab = { proses: 0, antre: 0, kosong: 0, nanti: 0, selesai: 0, semua: 0 };
+    rows.forEach(function (r) { if (!ed || g(r, 'Editor foto') === ed) { nTab[st(r)]++; nTab.semua++; if (kurangFoto(r)) nTab.kosong++; } });
     var f = F.foto.f;
     if (!f || (f !== 'semua' && !nTab[f] && !q)) f = ['proses', 'antre', 'nanti', 'selesai'].find(function (k) { return nTab[k]; }) || 'semua';
     F.foto.f = f;
-    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['nanti', 'Belum sesi'], ['selesai', 'Selesai'], ['semua', 'Semua']];
+    var TAB = [['proses', 'Dikerjakan'], ['antre', 'Antre'], ['kosong', 'Belum ada editor'], ['nanti', 'Belum sesi'], ['selesai', 'Selesai'], ['semua', 'Semua']];
     $('foTab').innerHTML = TAB.map(function (x) {
       var on = !q && f === x[0];
-      return '<button type="button" role="tab" aria-selected="' + on + '" data-t="' + x[0] + '" class="' + (on ? 'on' : '') + '">' + x[1] + ' <small>' + nTab[x[0]] + '</small></button>';
+      return '<button type="button" role="tab" aria-selected="' + on + '" data-t="' + x[0] + '" class="' + (on ? 'on' : '') + (x[0] === 'kosong' && nTab.kosong ? ' merah' : '') + '">' + x[1] + ' <small>' + nTab[x[0]] + '</small></button>';
     }).join('');
     Array.prototype.forEach.call($('foTab').children, function (bt) {
       bt.onclick = function () { F.foto.f = bt.getAttribute('data-t'); if (F.foto.q) { F.foto.q = ''; $('foQ').value = ''; } tampilkan('foto'); };
     });
     if (q || f === 'semua') f = '';                     // pencarian selalu mencari di semua status
     var urut = { antre: 1, proses: 0, selesai: 2, nanti: 3 };
-    var list = rows.filter(function (r) { return (!f || st(r) === f) && (!ed || g(r, 'Editor foto') === ed) && cocok(q, [g(r, 'Event'), g(r, 'Sesi'), g(r, 'Editor foto'), g(r, 'FG 1')].join(' ')); });
+    var list = rows.filter(function (r) { return (!f || (f === 'kosong' ? kurangFoto(r) : st(r) === f)) && (!ed || g(r, 'Editor foto') === ed) && cocok(q, [g(r, 'Event'), g(r, 'Sesi'), g(r, 'Editor foto'), g(r, 'FG 1')].join(' ')); });
     list = list.map(function (r, i) { return [r, i]; }).sort(function (a, b) { return (urut[st(a[0])] - urut[st(b[0])]) || a[1] - b[1]; }).map(function (x) { return x[0]; });
     LIST.foto = list;
     var judulGrup = { proses: 'Dikerjakan', antre: 'Antre', selesai: 'Selesai', nanti: 'Belum sesi' }, last = '', h = '';
