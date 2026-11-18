@@ -73,69 +73,25 @@
 
   /* ---------- susun otomatis ---------- */
   function orientasi(dim, id) { var o = dim[id]; return !o ? 'l' : (o.h > o.w * 1.05 ? 'p' : 'l'); }
-  // Album standar: 10 lembar = 20 halaman, maks. 6 foto per halaman (20 × 6 = 120 = batas pilihan album)
-  var JML_HAL = 20, MAKS_FOTO = 6;
-  // Bagi n foto ke p halaman: rata, tapi halaman pertama tiap sesi dibuat 1 foto (pembuka) bila muat
-  function bagiRata(n, p) {
-    var c = [], i;
-    for (i = 0; i < p; i++) c.push(Math.floor(n / p) + (i < n % p ? 1 : 0));
-    if (p >= 2 && c[0] > 1) {
-      var lebih = c[0] - 1, muat = 0;
-      for (i = 1; i < p; i++) muat += MAKS_FOTO - c[i];
-      if (muat >= lebih) {
-        c[0] = 1;
-        for (i = 1; lebih > 0; i = i % (p - 1) + 1) if (c[i] < MAKS_FOTO) { c[i]++; lebih--; }
-      }
-    }
-    return c;
-  }
-  // Bagi p halaman ke beberapa sesi sebanding jumlah fotonya (sisa terbesar), tiap sesi min. 1 halaman
-  function bagiHalaman(jml, p) {
-    var tot = jml.reduce(function (a, b) { return a + b; }, 0);
-    var h = jml.map(function (n) { return Math.max(1, Math.ceil(n / MAKS_FOTO), Math.floor(n / tot * p)); });
-    var sisa = function () { return p - h.reduce(function (a, b) { return a + b; }, 0); };
-    var urut = jml.map(function (n, i) { return i; }).sort(function (a, b) { return (jml[b] / tot * p - h[b]) - (jml[a] / tot * p - h[a]); });
-    for (var k = 0; sisa() > 0 && k < 1000; k++) { var i = urut[k % urut.length]; if (h[i] < jml[i]) h[i]++; }
-    // kelebihan halaman (karena minimum per sesi): kurangi dari sesi yang paling longgar
-    for (k = 0; sisa() < 0 && k < 1000; k++) {
-      var j = -1;
-      h.forEach(function (x, i) { if (x > Math.max(1, Math.ceil(jml[i] / MAKS_FOTO)) && (j < 0 || jml[i] / x < jml[j] / h[j])) j = i; });
-      if (j < 0) break; h[j]--;
-    }
-    return h;
-  }
-  function pilihLay(o) {
-    var n = o.length, semua = function (x) { return o.every(function (y) { return y === x; }); };
-    if (n === 1) return o[0] === 'l' ? '1f' : '1';
-    if (n === 2) return semua('l') ? '2h' : '2v';
-    if (n === 3) return o[0] === 'p' ? '3a' : (o[1] === 'p' && o[2] === 'p' ? '3b' : '3c');
-    if (n === 4) return semua('p') ? '4' : '4b';
-    return n === 5 ? '5' : '6';
-  }
   function susunOtomatis(foto, dim) {
     var hal = [], grup = [], last = null;
-    if (!foto.length) return hal;
     foto.forEach(function (f) { if (f.g !== last) { grup.push([]); last = f.g; } grup[grup.length - 1].push(f); });
-    var p = Math.max(Math.min(JML_HAL, foto.length), Math.ceil(foto.length / MAKS_FOTO));
-    // Sesi terlalu banyak untuk 20 halaman: susun sebagai satu urutan
-    // Sesi tidak muat dibagi rapi ke 20 halaman (terlalu banyak / maks. 6 foto per halaman): susun sebagai satu urutan
-    var minHal = grup.reduce(function (a, q) { return a + Math.max(1, Math.ceil(q.length / MAKS_FOTO)); }, 0);
-    if (minHal > p) grup = [foto.slice()];
-    var hp = bagiHalaman(grup.map(function (q) { return q.length; }), p);
-    grup.forEach(function (q, gi) {
-      q = q.slice();
-      bagiRata(q.length, hp[gi]).forEach(function (n) {
-        if (!n) return;
-        var isi = q.splice(0, n);
-        hal.push({ lay: pilihLay(isi.map(function (f) { return orientasi(dim, f.id); })), sesi: isi[0].g,
-          foto: isi.map(function (f) { return { id: f.id, x: 50, y: 50, z: 1 }; }) });
-      });
+    grup.forEach(function (q) {
+      q = q.slice(); var ke = 0;
+      var tambah = function (lay, n) { hal.push({ lay: lay, sesi: q[0].g, foto: q.splice(0, n).map(function (f) { return { id: f.id, x: 50, y: 50, z: 1 }; }) }); ke++; };
+      while (q.length) {
+        var o = q.slice(0, 4).map(function (f) { return orientasi(dim, f.id); });
+        if (ke === 0 || q.length === 1) { tambah(o[0] === 'l' && ke === 0 ? '1f' : '1', 1); continue; }
+        if (ke % 3 === 2 && q.length >= 4 && o.every(function (x) { return x === o[0]; })) { tambah(o[0] === 'p' ? '4' : '4b', 4); continue; }
+        if (o[0] === o[1] && (q.length === 2 || o[2] !== o[0] || ke % 2)) { tambah(o[0] === 'p' ? '2v' : '2h', 2); continue; }
+        if (q.length >= 3) { tambah(o[0] === 'p' ? '3a' : (o[1] === 'p' && o[2] === 'p' ? '3b' : '3c'), 3); continue; }
+        tambah('2v', 2);
+      }
     });
     return hal;
   }
   function drafBaru(foto, dim) {
-    // Bawaan: lanskap 30×25 cm
-    return { v: 1, ukuran: { w: 30, h: 25 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
+    return { v: 1, ukuran: { w: 25, h: 30 }, margin: 1.2, jarak: 0.5, latar: '#ffffff', halaman: susunOtomatis(foto, dim) };
   }
   function muatDimensi(ids, selesai) {
     var dim = {}, sisa = ids.length;
@@ -569,34 +525,23 @@
     function siap() { pasangGaya(); tungguTab(0); }
 
     /* cari deretan tab galeri: elemen yang memuat teks "Pilih untuk Album" + saudara "Video"/"Kenangan" */
-    // teks per elemen anak dipisah spasi: <span>4</span><span>Video</span> → "4 Video", bukan "4Video"
-    function teksEl(e) {
-      var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), n, a = [];
-      while ((n = w.nextNode())) if (n.nodeValue.trim()) a.push(n.nodeValue.trim());
-      return a.join(' ');
-    }
-    function tampil(e) { return !e.classList.contains('hidden') && !e.hidden && e.offsetParent !== null; }
-    function cariTab(akhir) {
+    function cariTab() {
       var semua = document.querySelectorAll('button, a, [role=tab], li');
       var vid = null, ken = null, alb = null;
       Array.prototype.forEach.call(semua, function (e) {
-        if (e.closest('.alb') || e.hasAttribute('data-alb-tab')) return;
-        var t = teksEl(e);
+        if (e.closest('.alb')) return;
+        var t = (e.textContent || '').replace(/\s+/g, ' ').trim();
         if (t.length > 60) return;
-        if (!vid && /^\d?\s*Video\b/i.test(t)) vid = e;
+        if (!vid && /\bVideo\b/i.test(t) && /^\d?\s*Video/i.test(t)) vid = e;
         if (!ken && /Kenangan/i.test(t)) ken = e;
         if (!alb && /Pilih untuk Album/i.test(t)) alb = e;
       });
-      // tunggu sampai tab yang terlihat paling kanan (Video/Kenangan) sudah tampil; setelah batas waktu pakai yang tampil
-      var acuan = null, nomor = '';
-      if (vid && tampil(vid)) { acuan = vid; nomor = '5'; }
-      else if (akhir && ken && tampil(ken)) { acuan = ken; nomor = '4'; }
-      else if (akhir && alb && tampil(alb)) { acuan = alb; nomor = '3'; }
+      var acuan = vid || ken || alb;
       if (!acuan || !acuan.parentNode) return null;
-      return { acuan: acuan, induk: acuan.parentNode, nomor: nomor };
+      return { acuan: acuan, induk: acuan.parentNode, nomor: vid ? '5' : ken ? '4' : '3' };
     }
     function tungguTab(n) {
-      var t = cariTab(n >= 30);                  // ±15 detik menunggu tab Video; setelah itu boleh tab lain
+      var t = cariTab();
       if (t) return pasangTab(t);
       if (n > 120) return;                       // ±60 detik: galeri besar butuh waktu dimuat
       setTimeout(function () { tungguTab(n + 1); }, 500);
@@ -619,32 +564,11 @@
       });
       if (teks.length && judulKe === teks.length - 1) teks[judulKe].parentNode.appendChild(document.createTextNode(''));
       // hapus kelas "aktif" bila tab acuan kebetulan sedang aktif
-      ['on', 'active', 'aktif', 'sel', 'selected', 'is-active', 'current', 'hidden'].forEach(function (c) { tabEl.classList.remove(c); });
-      tabEl.hidden = false;
-      tabEl.removeAttribute('data-t');           // jangan ikut ditangani skrip tab galeri
+      ['on', 'active', 'aktif', 'sel', 'selected', 'is-active', 'current'].forEach(function (c) { tabEl.classList.remove(c); });
       if (tabEl.tagName === 'A') tabEl.removeAttribute('href');
       tabEl.onclick = function (e) { e.preventDefault(); e.stopPropagation(); buka(); };
       t.acuan.parentNode.insertBefore(tabEl, t.acuan.nextSibling);
-      rapikan(0);
       if (/[#&]album\b/.test(location.hash)) buka();
-    }
-    /* Tab Video bisa baru tampil belakangan (video dimuat lambat): pindahkan Album ke paling kanan
-       dan nomori ulang tab yang terlihat (1, 2, 3, …) supaya urutan tetap … · Video · Album */
-    function rapikan(n) {
-      if (!tabEl || !tabEl.parentNode) return;
-      var induk = tabEl.parentNode;
-      var kids = Array.prototype.filter.call(induk.children, function (e) { return e !== tabEl && !e.closest('.alb'); });
-      var akhir = null;
-      kids.forEach(function (e) { if (tampil(e)) akhir = e; });
-      if (akhir && akhir.compareDocumentPosition(tabEl) & Node.DOCUMENT_POSITION_PRECEDING) induk.insertBefore(tabEl, akhir.nextSibling);
-      var no = 0;
-      Array.prototype.forEach.call(induk.children, function (e) {
-        if (e !== tabEl && !tampil(e)) return;
-        no++;
-        var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), x;
-        while ((x = w.nextNode())) { var v = x.nodeValue.trim(); if (v) { if (/^\d+$/.test(v) && v !== String(no)) x.nodeValue = x.nodeValue.replace(v, String(no)); break; } }
-      });
-      if (n < 90) setTimeout(function () { rapikan(n + 1); }, 1000);   // pantau ±90 detik
     }
     function keteranganTab() {
       if (D.otomatis) return D.draf.halaman.length + ' halaman · draf awal';
