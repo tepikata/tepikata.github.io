@@ -569,23 +569,34 @@
     function siap() { pasangGaya(); tungguTab(0); }
 
     /* cari deretan tab galeri: elemen yang memuat teks "Pilih untuk Album" + saudara "Video"/"Kenangan" */
-    function cariTab() {
+    // teks per elemen anak dipisah spasi: <span>4</span><span>Video</span> → "4 Video", bukan "4Video"
+    function teksEl(e) {
+      var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), n, a = [];
+      while ((n = w.nextNode())) if (n.nodeValue.trim()) a.push(n.nodeValue.trim());
+      return a.join(' ');
+    }
+    function tampil(e) { return !e.classList.contains('hidden') && !e.hidden && e.offsetParent !== null; }
+    function cariTab(akhir) {
       var semua = document.querySelectorAll('button, a, [role=tab], li');
       var vid = null, ken = null, alb = null;
       Array.prototype.forEach.call(semua, function (e) {
-        if (e.closest('.alb')) return;
-        var t = (e.textContent || '').replace(/\s+/g, ' ').trim();
+        if (e.closest('.alb') || e.hasAttribute('data-alb-tab')) return;
+        var t = teksEl(e);
         if (t.length > 60) return;
-        if (!vid && /\bVideo\b/i.test(t) && /^\d?\s*Video/i.test(t)) vid = e;
+        if (!vid && /^\d?\s*Video\b/i.test(t)) vid = e;
         if (!ken && /Kenangan/i.test(t)) ken = e;
         if (!alb && /Pilih untuk Album/i.test(t)) alb = e;
       });
-      var acuan = vid || ken || alb;
+      // tunggu sampai tab yang terlihat paling kanan (Video/Kenangan) sudah tampil; setelah batas waktu pakai yang tampil
+      var acuan = null, nomor = '';
+      if (vid && tampil(vid)) { acuan = vid; nomor = '5'; }
+      else if (akhir && ken && tampil(ken)) { acuan = ken; nomor = '4'; }
+      else if (akhir && alb && tampil(alb)) { acuan = alb; nomor = '3'; }
       if (!acuan || !acuan.parentNode) return null;
-      return { acuan: acuan, induk: acuan.parentNode, nomor: vid ? '5' : ken ? '4' : '3' };
+      return { acuan: acuan, induk: acuan.parentNode, nomor: nomor };
     }
     function tungguTab(n) {
-      var t = cariTab();
+      var t = cariTab(n >= 30);                  // ±15 detik menunggu tab Video; setelah itu boleh tab lain
       if (t) return pasangTab(t);
       if (n > 120) return;                       // ±60 detik: galeri besar butuh waktu dimuat
       setTimeout(function () { tungguTab(n + 1); }, 500);
@@ -608,7 +619,9 @@
       });
       if (teks.length && judulKe === teks.length - 1) teks[judulKe].parentNode.appendChild(document.createTextNode(''));
       // hapus kelas "aktif" bila tab acuan kebetulan sedang aktif
-      ['on', 'active', 'aktif', 'sel', 'selected', 'is-active', 'current'].forEach(function (c) { tabEl.classList.remove(c); });
+      ['on', 'active', 'aktif', 'sel', 'selected', 'is-active', 'current', 'hidden'].forEach(function (c) { tabEl.classList.remove(c); });
+      tabEl.hidden = false;
+      tabEl.removeAttribute('data-t');           // jangan ikut ditangani skrip tab galeri
       if (tabEl.tagName === 'A') tabEl.removeAttribute('href');
       tabEl.onclick = function (e) { e.preventDefault(); e.stopPropagation(); buka(); };
       t.acuan.parentNode.insertBefore(tabEl, t.acuan.nextSibling);
