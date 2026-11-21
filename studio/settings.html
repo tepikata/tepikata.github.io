@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pengaturan Tampilan — Tepi Kata Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1kgn4jz3Ynrd_Pf6YEtKSwm5eUGcizJ2K">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#F8F8F8;color:#121212;font:14px/1.55 "Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+  .top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(18,18,18,.1)}
+  .top-in{max-width:1160px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px));height:66px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand a{text-decoration:none;font:500 20px/1 "Cormorant Garamond","Bodoni Moda",Georgia,serif;letter-spacing:.24em;text-transform:uppercase;color:#121212;white-space:nowrap}
+  .brand a:hover{color:#96764A}
+  .sep{width:1px;height:20px;background:rgba(18,18,18,.14)}
+  .sub{display:flex;flex-direction:column;min-width:0}
+  .sub b{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#96764A;font-weight:600}
+  .sub span{font-size:11.5px;color:#686868;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acts{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border:1px solid rgba(18,18,18,.18);background:#FFFFFF;color:#121212;text-decoration:none;font:600 10.5px/1 "Inter",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .16s}
+  .btn:hover{border-color:#121212}
+  .btn.pri{background:#121212;border-color:#121212;color:#FFFFFF}
+  .btn.pri:hover{background:#96764A;border-color:#96764A}
+  .main{max-width:1160px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left,0px)) 36px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start}
+  .pv-col{position:sticky;top:86px}
+  .pv-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .pv-hd span{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#686868;font-weight:600}
+  .pv-note{margin:10px 0 0;font-size:12px;color:#686868;line-height:1.5}
+  .mobbar{display:none}
+  @media (max-width:940px){
+    .main{grid-template-columns:1fr;gap:18px}
+    .pv-col{position:static;order:-1}
+  }
+  @media (max-width:640px){
+    .sep,.sub,.hide-sm{display:none!important}
+    .mobbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(18,18,18,.12);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));gap:8px}
+    .mobbar .btn{flex:1;padding:12px 10px}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <a href="index.html">TEPI KATA</a>
+      <span class="sep"></span>
+      <div class="sub">
+        <b>Pengaturan Studio</b>
+        <span><span class="tk-set-ghdot" data-tk-gh-dot></span><span data-tk-dirty>Memuat konfigurasi…</span></span>
+      </div>
+    </div>
+    <div class="acts">
+      <a href="index.html" class="btn">← Studio</a>
+      <button type="button" class="btn hide-sm" id="topPreview">Pratinjau</button>
+      <button type="button" class="btn pri hide-sm" id="topPublish">Simpan &amp; Publish</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <section id="settingsMount" aria-label="Editor pengaturan tampilan"></section>
+
+  <aside class="pv-col" aria-label="Pratinjau langsung">
+    <div class="pv-hd">
+      <span>Pratinjau Langsung</span>
+      <button type="button" class="btn" id="pvOpenClient" style="padding:6px 10px;font-size:10px">Uji Layar Klien ↗</button>
+    </div>
+    <div class="tk-pv-wrap">
+      <div class="tk-pv-tabs" role="tablist" aria-label="Mode pratinjau">
+        <button type="button" class="on" data-pv-mode="studio">Studio</button>
+        <button type="button" data-pv-mode="klien">Layar Klien</button>
+        <button type="button" data-pv-mode="album">Draf Album</button>
+      </div>
+      <div class="tk-pv-stage" id="tkFullPreviewStage"></div>
+    </div>
+    <p class="pv-note">Perubahan langsung terlihat di pratinjau ini. Klik <b>Simpan &amp; Publish</b> agar langsung berlaku di seluruh perangkat tim dan galeri klien.</p>
+  </aside>
+</main>
+
+<div class="mobbar">
+  <button type="button" class="btn" id="mobPreview">Pratinjau</button>
+  <button type="button" class="btn pri" id="mobPublish">Simpan &amp; Publish</button>
+</div>
+
+<script src="theme-engine.js"></script>
+<script src="settings-ui.js"></script>
+<script>
+  (function () {
+    TepiKataSettings.mountFullPage(document.getElementById('settingsMount'));
+    document.getElementById('topPreview').onclick = function () { TepiKataSettings.openStudioPreview(); };
+    document.getElementById('mobPreview').onclick = function () { TepiKataSettings.openStudioPreview(); };
+    document.getElementById('pvOpenClient').onclick = function () { TepiKataSettings.openClientPreview(); };
+    document.getElementById('topPublish').onclick = function () { TepiKataSettings.publishNow(); };
+    document.getElementById('mobPublish').onclick = function () { TepiKataSettings.publishNow(); };
+  })();
+</script>
+</body>
+</html>

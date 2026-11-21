@@ -23,38 +23,47 @@
 <meta name="theme-color" content="#2E1A24">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%234B2A3A%22/%3E%3Ctext x=%2232%22 y=%2245%22 font-family=%22Georgia,serif%22 font-size=%2236%22 fill=%22%23F1EEEA%22 text-anchor=%22middle%22%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{--plum-tua:#2E1A24;--krem:#F8F0E9;--kabut:#D9C9BE;--emas:#B08A57}
-  html,body{margin:0;height:100%;background:var(--plum-tua);color:var(--krem);font:15px/1.55 "Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s;background:#F1EEEA}
+  :root{
+    --plum-tua:#2E1A24;--krem:#F8F0E9;--kabut:#D9C9BE;--emas:#B08A57;--merek-ink:#ECDDCC;
+    --overlay-rgb:46,26,36;--ring-rgb:217,194,160;--track-bg:rgba(255,255,255,.14);--iframe-bg:#F1EEEA;
+    --font-display:"Bodoni Moda","Cormorant Garamond",Georgia,serif;
+    --font-body:"Plus Jakarta Sans","Inter",system-ui,sans-serif;
+    --bar-radius:2px;--title-shadow:0 2px 30px rgba(0,0,0,.25)
+  }
+  html,body{margin:0;height:100%;background:var(--plum-tua);color:var(--krem);font:15px/1.55 var(--font-body);-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s;background:var(--iframe-bg)}
   iframe.ok{opacity:1}
 
   /* Layar tunggu: foto-foto klien sendiri berganti pelan di belakang nama mereka */
-  .tirai{position:fixed;inset:0;overflow:hidden;background:var(--plum-tua);transition:opacity .8s ease}
+  .tirai{position:fixed;inset:0;overflow:hidden;background:var(--plum-tua);transition:opacity .8s ease,background-color .25s ease}
   .tirai.pergi{opacity:0;pointer-events:none}
   .foto{position:absolute;inset:0}
   .foto i{position:absolute;inset:0;background-size:cover;background-position:center 32%;opacity:0;transform:scale(1.08);transition:opacity 1.6s ease,transform 7s linear}
   .foto i.on{opacity:1;transform:scale(1)}
   .tirai::before{content:"";position:absolute;right:-140px;top:-170px;width:460px;height:460px;border-radius:50%;pointer-events:none;
-    border:1px solid rgba(217,194,160,.16);box-shadow:0 0 0 60px rgba(217,194,160,.035),0 0 0 120px rgba(217,194,160,.02)}
+    border:1px solid rgba(var(--ring-rgb),.18);box-shadow:0 0 0 60px rgba(var(--ring-rgb),.04),0 0 0 120px rgba(var(--ring-rgb),.02)}
   .tirai::after{content:"";position:absolute;inset:0;pointer-events:none;background:
-    linear-gradient(180deg,rgba(46,26,36,.55) 0%,rgba(46,26,36,.12) 30%,rgba(46,26,36,.35) 58%,rgba(46,26,36,.94) 100%)}
+    linear-gradient(180deg,rgba(var(--overlay-rgb),.55) 0%,rgba(var(--overlay-rgb),.12) 30%,rgba(var(--overlay-rgb),.38) 58%,rgba(var(--overlay-rgb),.94) 100%)}
   .isi{position:absolute;z-index:1;left:0;right:0;bottom:0;padding:0 28px calc(46px + env(safe-area-inset-bottom,0px));max-width:1100px;margin:0 auto}
-  .merek{position:absolute;z-index:1;top:calc(26px + env(safe-area-inset-top,0px));left:28px;font:500 13px/1 "Plus Jakarta Sans",sans-serif;letter-spacing:.24em;color:#ECDDCC}
+  .merek{position:absolute;z-index:1;top:calc(26px + env(safe-area-inset-top,0px));left:28px;font:500 13px/1 var(--font-body);letter-spacing:.24em;text-transform:uppercase;color:var(--merek-ink)}
   .sapa{margin:0;color:var(--kabut);font-size:15px}
-  h1{font:400 clamp(44px,9vw,112px)/.95 "Bodoni Moda",Georgia,serif;margin:12px 0 0;letter-spacing:-.01em;text-wrap:balance;text-shadow:0 2px 30px rgba(0,0,0,.25)}
+  h1{font:400 clamp(44px,9vw,112px)/.95 var(--font-display);margin:12px 0 0;letter-spacing:-.01em;text-wrap:balance;text-shadow:var(--title-shadow)}
   .ket{margin:18px 0 0;color:var(--kabut);font-size:14.5px;min-height:1.6em;transition:opacity .5s}
-  .garis{width:min(280px,60vw);height:2px;margin:16px 0 0;background:rgba(255,255,255,.14);overflow:hidden;border-radius:2px}
+  .garis{width:min(280px,60vw);height:2px;margin:16px 0 0;background:var(--track-bg);overflow:hidden;border-radius:var(--bar-radius)}
   .garis i{display:block;height:100%;width:6%;background:var(--emas);transition:width 1.2s ease}
   .kosong h1{font-size:clamp(40px,7vw,84px)}
+  .pv-badge{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));right:20px;z-index:10;display:flex;align-items:center;gap:8px;background:rgba(18,18,18,.88);color:#FFFFFF;padding:7px 12px;font:500 12px/1.2 "Inter",system-ui,sans-serif}
+  .pv-badge button{border:1px solid rgba(255,255,255,.35);background:transparent;color:#FFFFFF;padding:4px 8px;font-size:11px;cursor:pointer}
   @media (prefers-reduced-motion:reduce){.foto i{transition:opacity .4s;transform:none}.garis i{transition:none}}
 </style>
 </head>
 <body>
 <div class="tirai" id="tirai">
   <div class="foto" id="foto" aria-hidden="true"></div>
-  <div class="merek">TEPI KATA</div>
+  <div class="merek" id="merek">TEPI KATA</div>
   <div class="isi">
     <p class="sapa" id="sapa">Selamat datang</p>
     <h1 id="judul">Membuka galeri</h1>
@@ -66,7 +75,10 @@
   // Link: https://tepikata.github.io/nama-klien-xxxx  →  aplikasi galeri Tepi Kata
   var APP = 'https://script.google.com/macros/s/AKfycbw-JPq01HTHxvZ8WKSyY6nR40I8wEwPrNfW8CS8fhjV1-ELpqUAQYsTbr8T_tA6gzg/exec';
   var $ = function (id) { return document.getElementById(id); };
-  var slug = location.pathname.replace(/^\/+|\/+$/g, '').split('/').pop() || new URLSearchParams(location.search).get('k') || '';
+  var qs = new URLSearchParams(location.search);
+  var isPreview = qs.get('preview') === '1';
+  var demoNama = isPreview ? (qs.get('demo') || 'Alya & Raka') : '';
+  var slug = location.pathname.replace(/^\/+|\/+$/g, '').split('/').pop() || qs.get('k') || '';
   if (/\.html?$/i.test(slug)) slug = '';
   slug = slug.replace(/[^A-Za-z0-9_-]/g, '');
 
@@ -76,7 +88,97 @@
     return n.toLowerCase().replace(/(^|[\s&(\/-])(\S)/g, function (m, a, c) { return a + c.toUpperCase(); });
   }
 
-  if (!slug) {
+  // Pesan tunggu default (dapat diselaraskan dari studio/config.json)
+  var pesan = ['Foto-foto hari bahagia Anda sedang disiapkan.', 'Menyusun foto dari setiap sesi…', 'Sebentar lagi, hampir siap…', 'Galeri berisi banyak foto, terima kasih sudah menunggu.'];
+  var ip = 0;
+
+  // Selaraskan tema & teks layar tunggu dari studio/config.json (tidak memperlambat muat galeri)
+  function hexRgb(hex) {
+    var m = String(hex || '').trim().match(/^#([0-9a-f]{6})$/i);
+    if (!m) return [46, 26, 36];
+    var n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function isLightHex(hex) {
+    var rgb = hexRgb(hex);
+    return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.6;
+  }
+  function terapkanKonfig(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    var root = document.documentElement;
+    if (cfg.theme && cfg.theme.colors) {
+      var c = cfg.theme.colors;
+      var bg = c.headerBg || '#2E1A24';
+      var light = isLightHex(bg);
+      var ink = light ? (c.ink || '#121212') : (c.headerInk || '#F8F0E9');
+      var muted = light ? (c.muted || '#686868') : (c.headerMuted || '#D9C9BE');
+      var accent = c.accent || '#B08A57';
+      var merekInk = light ? (c.accent || '#96764A') : (c.accentLight || '#ECDDCC');
+      root.style.setProperty('--plum-tua', bg);
+      root.style.setProperty('--krem', ink);
+      root.style.setProperty('--kabut', muted);
+      root.style.setProperty('--emas', accent);
+      root.style.setProperty('--merek-ink', merekInk);
+      root.style.setProperty('--overlay-rgb', hexRgb(bg).join(','));
+      root.style.setProperty('--ring-rgb', hexRgb(light ? accent : (c.accentLight || '#D9C2A0')).join(','));
+      root.style.setProperty('--track-bg', light ? 'rgba(18,18,18,.12)' : 'rgba(255,255,255,.14)');
+      root.style.setProperty('--iframe-bg', c.bg || '#F1EEEA');
+      root.style.setProperty('--title-shadow', light ? 'none' : '0 2px 30px rgba(0,0,0,.25)');
+      if (cfg.theme.cornerStyle === 'sharp') root.style.setProperty('--bar-radius', '0px');
+      if (cfg.theme.fonts) {
+        if (cfg.theme.fonts.display) root.style.setProperty('--font-display', '"' + cfg.theme.fonts.display + '","Cormorant Garamond",Georgia,serif');
+        if (cfg.theme.fonts.body) root.style.setProperty('--font-body', '"' + cfg.theme.fonts.body + '","Inter",system-ui,sans-serif');
+      }
+      var mt = document.querySelector('meta[name="theme-color"]');
+      if (mt) mt.setAttribute('content', bg);
+    }
+    if (cfg.client && typeof cfg.client === 'object') {
+      var cl = cfg.client;
+      if (cl.brand && $('merek')) $('merek').textContent = cl.brand;
+      if (!slug && !demoNama) {
+        if (cl.emptyEyebrow) $('sapa').textContent = cl.emptyEyebrow;
+        if (cl.emptyTitle) $('judul').textContent = cl.emptyTitle;
+        if (cl.emptyNote) $('ket').textContent = cl.emptyNote;
+      } else {
+        if (cl.greeting) $('sapa').textContent = cl.greeting;
+        if (Array.isArray(cl.loadingMessages) && cl.loadingMessages.length) {
+          pesan = cl.loadingMessages;
+          if (ip === 0 && $('ket')) $('ket').textContent = pesan[0];
+        }
+      }
+    }
+  }
+  (function muatKonfig() {
+    if (isPreview) {
+      try {
+        var pv = localStorage.getItem('tepikata_studio_preview_config');
+        if (pv) { terapkanKonfig(JSON.parse(pv)); return; }
+      } catch (e) { }
+    }
+    if (location.protocol === 'file:') return;
+    try {
+      fetch('/studio/config.json?v=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { if (j) terapkanKonfig(j); })
+        .catch(function () { });
+    } catch (e) { }
+  })();
+
+  if (isPreview && !slug) {
+    $('judul').textContent = demoNama;
+    document.title = demoNama + ' — Pratinjau Layar Klien';
+    $('maju').style.width = '64%';
+    var pvBar = document.createElement('div');
+    pvBar.className = 'pv-badge';
+    pvBar.innerHTML = '<span>Pratinjau Layar Klien</span><button type="button" id="pvClose">Tutup</button>';
+    document.body.appendChild(pvBar);
+    $('pvClose').onclick = function () { window.close(); location.href = 'studio/settings.html'; };
+    setInterval(function () {
+      ip = (ip + 1) % pesan.length;
+      var k = $('ket'); k.style.opacity = 0;
+      setTimeout(function () { k.textContent = pesan[ip]; k.style.opacity = 1; }, 400);
+    }, 3800);
+  } else if (!slug) {
     document.body.classList.add('kosong');
     $('sapa').textContent = 'Galeri foto klien';
     $('judul').textContent = 'Tepi Kata';
@@ -87,8 +189,7 @@
     if (nama) { $('judul').textContent = nama; document.title = nama + ' — Galeri Foto Tepi Kata'; }
 
     // Pesan bergantian & garis maju pelan selama galeri dimuat (galeri besar bisa sampai ±30 detik)
-    var pesan = ['Foto-foto hari bahagia Anda sedang disiapkan.', 'Menyusun foto dari setiap sesi…', 'Sebentar lagi, hampir siap…', 'Galeri berisi banyak foto, terima kasih sudah menunggu.'];
-    var ip = 0, mulai = Date.now(), selesai = false;
+    var mulai = Date.now(), selesai = false;
     var tPesan = setInterval(function () {
       if (selesai) return;
       ip = Math.min(ip + 1, pesan.length - 1);

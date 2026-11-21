@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "theme": {
+    "preset": "classic-plum",
+    "cornerStyle": "rounded",
+    "colors": {
+      "bg": "#F1EEEA",
+      "surface": "#FFFFFF",
+      "soft": "#F3EEE8",
+      "ink": "#1D1A1B",
+      "muted": "#77706B",
+      "line": "#E7E1DA",
+      "accent": "#B08A57",
+      "accentLight": "#D9C2A0",
+      "headerBg": "#2E1A24",
+      "headerSurface": "#4B2A3A",
+      "headerInk": "#F7EFEA",
+      "headerMuted": "#D9C2A0"
+    },
+    "fonts": {
+      "display": "Bodoni Moda",
+      "body": "Plus Jakarta Sans"
+    }
+  },
+  "collage": {
+    "source": "drive",
+    "filter": "sepia",
+    "showHero": true,
+    "showBackground": true,
+    "photos": []
+  },
+  "album": {
+    "defaultWidth": 25,
+    "defaultHeight": 30,
+    "defaultMargin": 1.2,
+    "defaultGap": 0.5,
+    "defaultPageBg": "#ffffff"
+  },
+  "client": {
+    "brand": "TEPI KATA",
+    "greeting": "Selamat datang",
+    "emptyEyebrow": "Galeri foto klien",
+    "emptyTitle": "Tepi Kata",
+    "emptyNote": "Buka link pribadi yang dikirim fotografer Anda untuk melihat galeri foto Anda.",
+    "loadingMessages": [
+      "Foto-foto hari bahagia Anda sedang disiapkan.",
+      "Menyusun foto dari setiap sesi…",
+      "Sebentar lagi, hampir siap…",
+      "Galeri berisi banyak foto, terima kasih sudah menunggu."
+    ]
+  }
+}
